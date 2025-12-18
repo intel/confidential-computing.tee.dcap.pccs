@@ -32,53 +32,92 @@
 import X509 from '../x509/x509.js';
 import PckCertificate from './PckCertificate.js';
 import Tcb from './Tcb.js';
-import util from "util";
+import util from 'util';
 import Constants from '../constants/index.js';
 import { TcbNonComparableError} from '../utils/errors.js';
+import logger from '../utils/Logger.js';
 
 export function selectBestPckCert(rawCpusvn, rawPcesvn, pceid, pckCertData, tcbInfo) {
-    let pckCerts = parsePckCerts(pckCertData);
-    validateInput(pceid, pckCerts, tcbInfo);
+    try {
+        let pckCerts = parsePckCerts(pckCertData);
+        validateInput(pceid, pckCerts, tcbInfo);
 
-    // create structure for collecting PCK certs that match TCB level
-    let tcbPckCertsBuckets = createBucketsForCertificatesByTcb(tcbInfo);
-    // match pck certs to proper pckCertSelection info
-    pckCerts.forEach(pckCert => {
-        for (const tcbBucket of tcbPckCertsBuckets) {
+        // create structure for collecting PCK certs that match TCB level
+        let tcbPckCertsBuckets = createBucketsForCertificatesByTcb(tcbInfo);
+        // match pck certs to proper pckCertSelection info
+        pckCerts.forEach(pckCert => {
+            for (const tcbBucket of tcbPckCertsBuckets) {
+                try {
+                    if (pckCert.tcb.compare(tcbBucket.tcb) >= 0) { // pck cert is greater or equal
+                        // we need to put PCK cert into suitable place in the bucket
+                        let index = findIndexToInsertCertIntoBucket(tcbBucket.certs, pckCert);
+                        if (index === -1) { // If no smaller TCB is found, append to the end
+                            tcbBucket.certs.push(pckCert);
+                        } else { // Insert at the correct position
+                            tcbBucket.certs.splice(index, 0, pckCert);
+                        }
+                        break;
+                    }
+                } catch (e) {
+                    if (e instanceof TcbNonComparableError) { // error is a result of invalid cert (incomparable TCB) - going to the next bucket
+                        continue;
+                    } else {
+                        throw e;
+                    }
+                }
+            }
+            // if cert does not match any TCB level it is not valid - omit
+        });
+
+        const rawTCB = new Tcb(rawCpusvn, littleEndianHexStringToInteger(rawPcesvn));
+        // browsing all the buckets to find the best suitable PCK cert for given raw TCB
+        return selectBestPckCertFromTcbBuckets(rawTCB, tcbPckCertsBuckets);
+    } catch (e) {
+        logger.error('Error during selection of PCK Cert: ' + e.message);
+        throw e;
+    }
+}
+
+function findIndexToInsertCertIntoBucket(certList, pckCert) {
+    let index = 0;
+    for (const cert of certList) {
+        try {
+            if (pckCert.tcb.compare(cert.tcb) >= 0) {
+                return index;
+            }
+        } catch (e) {
+            if (e instanceof TcbNonComparableError) {
+                // Note: that's the intention that even there is a cert with non-comparable tcb we skip it,
+                // leave it in that order and proceed to the next cert 
+                // with the diclaimer that certs in the bucket can be unordered.
+                continue;
+            } else {
+                throw e;
+            }
+        }
+        index++;
+    }
+    return -1;
+}
+
+function selectBestPckCertFromTcbBuckets(rawTCB, tcbPckCertsBuckets) {
+    for (const tcbBucket of tcbPckCertsBuckets) {
+        for (const pckCert of tcbBucket.certs) {
             try {
-                if (pckCert.tcb.compare(tcbBucket.tcb) >= 0) { // pck cert is greater or equal
-                    tcbBucket.certs.push(pckCert);
-                    break;
+                if (rawTCB.compare(pckCert.tcb) >= 0) { // found a suitable PCK cert
+                    return pckCert.pckCertFromDb;
                 }
             } catch (e) {
-                if (e instanceof TcbNonComparableError) { // error is a result of invalid cert (incomparable TCB) - ignoring cert
-                    break;
+                if (e instanceof TcbNonComparableError) { // if cert with non-comparable TCB, skip to next cert
+                    continue;
                 } else {
                     throw e;
                 }
             }
         }
-        // if cert does not match any TCB level it is not valid - omit
-    });
-
-    // counting equivalent for platform TCB based on TCB info
-    const rawTCB = new Tcb(rawCpusvn, littleEndianHexStringToInteger(rawPcesvn));
-    const eqvTCB = rawTCB.computeEquivalent(tcbPckCertsBuckets)
-    if (!eqvTCB) {
-        throw new Error(util.format('No equivalent TCB found for given raw TCB: CPUSVN %s, PCESVN: %s', rawCpusvn, rawPcesvn));
     }
-
-    // looking for the best pck cert in bucket
-    return selectBestPckCertFromTcbBucket(rawTCB, eqvTCB.certs);
-}
-
-function selectBestPckCertFromTcbBucket(rawTCB, pckCerts) {
-    pckCerts.sort((x,y) => y.tcb.compare(x.tcb));
-    const bestPckCert = pckCerts.find(pckCert => rawTCB.compare(pckCert.tcb) >= 0).pckCertFromDb;
-    if (bestPckCert === undefined) {
-        throw new Error('No certificate found for given platform');
-    }
-    return bestPckCert;
+    // if no suitable cert found - throw error
+    throw new Error('No certificate found for given platform');
 }
 
 function parsePckCerts(pckCertData) {
@@ -94,6 +133,10 @@ function parsePckCerts(pckCertData) {
 }
 
 function validateInput(pceId, pckCerts, tcbInfo) {
+    if (tcbInfo.tcbType !== 0) {
+        throw new Error(util.format('TCB_TYPE in TCB Info (%s) is different than 0', tcbInfo.tcbType));
+    }
+
     // check if PCEID is the same for platform and TCB Info
     if (tcbInfo.pceId.toUpperCase() !== pceId.toUpperCase()) {
         throw new Error(util.format('PCEID in TCB Info (%s) is different than platform PCEID (%s)', tcbInfo.pceId, pceId));

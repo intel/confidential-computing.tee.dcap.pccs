@@ -55,12 +55,6 @@ class Tcb {
         return _.zip(this.tcbComponents, that.tcbComponents).find(component => component[0] > component[1]) === undefined;
     }
 
-    computeEquivalent(sortedTcbList) {
-        const tcb = this;
-        // Finding biggest TCB which is smaller than raw TCB
-        return sortedTcbList.find(eq => eq.tcb.isLeftTcbEquivalent(tcb))
-    }
-
     compare(that) {
         let componentsToCompare = _.zip(this.tcbComponents, that.tcbComponents);
         let leftLower, rightLower = false;
