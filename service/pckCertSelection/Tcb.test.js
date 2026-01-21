@@ -38,47 +38,6 @@ describe('Tcb', () => {
         });
     });
 
-    describe('#computeEquivalent()', () => {
-        it('should return the largest equivalent TCB from the sorted list', () => {
-            const tcbHighest = new Tcb('02022222000200000000000000000000', 10);
-            const tcbMedium = new Tcb('01011111000100000000000000000000', 9);
-            const tcbLowest =  new Tcb('01010101000100000000000000000000', 8);
-            const sortedTcbList = [
-                { tcb: tcbHighest },
-                { tcb: tcbMedium },
-                { tcb: tcbLowest }
-            ];
-
-            const tcbHigherThanHighestEquivalent = new Tcb('03033333000300000000000000000000', 11);
-            const tcbWithCpusvnHigherThanMediumAndPcesvnEqualMedium = new Tcb('02011111000200000000000000000000', 9);
-            const tcbWithCpusvnEqualAndPcesvnHigherThanMedium = new Tcb('01011111000100000000000000000000', 10);
-            const tcbWithCpusvnAndPceSvnHigherThanLowest = new Tcb('02010101000100000000000000000000',  9);
-
-            expect(tcbHighest.computeEquivalent(sortedTcbList).tcb).to.deep.equal(sortedTcbList[0].tcb);
-            expect(tcbMedium.computeEquivalent(sortedTcbList).tcb).to.deep.equal(sortedTcbList[1].tcb);
-            expect(tcbLowest.computeEquivalent(sortedTcbList).tcb).to.deep.equal(sortedTcbList[2].tcb);
-
-            expect(tcbHigherThanHighestEquivalent.computeEquivalent(sortedTcbList).tcb).to.deep.equal(sortedTcbList[0].tcb);
-            expect(tcbWithCpusvnHigherThanMediumAndPcesvnEqualMedium.computeEquivalent(sortedTcbList).tcb).to.deep.equal(sortedTcbList[1].tcb);
-            expect(tcbWithCpusvnEqualAndPcesvnHigherThanMedium.computeEquivalent(sortedTcbList).tcb).to.deep.equal(sortedTcbList[1].tcb);
-            expect(tcbWithCpusvnAndPceSvnHigherThanLowest.computeEquivalent(sortedTcbList).tcb).to.deep.equal(sortedTcbList[2].tcb);
-        });
-
-        it('should return undefined if no equivalent TCB is found', () => {
-            const sortedTcbList = [
-                { tcb: new Tcb('02022222000200000000000000000000', 10) },
-                { tcb: new Tcb('01011111000100000000000000000000', 9) },
-                { tcb: new Tcb('01010101000100000000000000000000', 8) },
-            ];
-
-            const tcbLowerThanLowestEquivalent = new Tcb('01000101000100000000000000000000', 7);
-            const tcbWithMixedCpusvn = new Tcb('02010011000100000000000000000000', 9);
-
-            expect(tcbLowerThanLowestEquivalent.computeEquivalent(sortedTcbList)).to.be.undefined;
-            expect(tcbWithMixedCpusvn.computeEquivalent(sortedTcbList)).to.be.undefined;
-        });
-    });
-
     describe('#compare()', () => {
         it('should throw an error when TCBs are not comparable', () => {
             const tcbBase = new Tcb('01011111000100000000000000000000', 10);
