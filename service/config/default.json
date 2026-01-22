@@ -12,18 +12,8 @@
     "LogLevel" : "info",
     "DB_CONFIG" : "sqlite",
     "sqlite" : {
-        "database" : "database",
-        "username" : "username",
-        "password" : "password",
         "options" : {
-            "host": "localhost",
             "dialect": "sqlite",
-            "pool": {
-                "max": 5,
-                "min": 0,
-                "acquire": 30000,
-                "idle": 10000
-            },
             "define": {
                 "freezeTableName": true
             },
@@ -31,28 +21,29 @@
             "storage": "pckcache.db"
         }
     }, 
-    "mysql" : {
-        "database" : "pckcache",
-        "username" : "root",
-        "password" : "mypass",
-        "options" : {
-            "host": "localhost",
-            "port": "3306",
-            "dialect": "mysql",
-            "pool": {
-                "max": 5,
-                "min": 0,
-                "acquire": 30000,
-                "idle": 10000
-            },
-            "define": {
-                "freezeTableName": true
-            },
-            "logging" : false
-        },
-        "ssl":{
-            "required": false,
-            "ca":"/if_required/path/to/your_ssl_ca"
-        }
-    }
+    //"mysql" : {   // This config section is used only if DB_CONFIG == "mysql".
+    //              // Uncomment when using with MySQL and adjust the values to match your DB setup.
+    //    "database" : "pckcache",
+    //    "username" : "<Your MySQL username>",
+    //    "password" : "<Your MySQL password>",
+    //    "options" : {
+    //        "host": "localhost",
+    //        "port": "3306",
+    //        "dialect": "mysql",
+    //        "pool": {
+    //            "max": 5,
+    //            "min": 0,
+    //            "acquire": 30000,
+    //            "idle": 10000
+    //        },
+    //        "define": {
+    //            "freezeTableName": true
+    //        },
+    //        "logging" : false
+    //    },
+    //    "ssl":{
+    //        "required": false,
+    //        "ca":"/if_ssl_is_required/path/to/your_ssl_ca"
+    //    }
+    //}
 }
