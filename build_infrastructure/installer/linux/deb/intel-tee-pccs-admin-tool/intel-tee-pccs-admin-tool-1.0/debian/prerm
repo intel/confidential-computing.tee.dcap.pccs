@@ -18,7 +18,7 @@ set -e
 
 
 PACKAGE_PATH=@pkg_path@
-VENV_DIR="$PACKAGE_PATH/venv"
+VENV_DIR="$PACKAGE_PATH/.venv"
 WRAPPER_SCRIPT_NAME=@pkg_wrapper_script_name@
 
 function delete_venv {
