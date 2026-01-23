@@ -44,8 +44,10 @@ export function selectBestPckCert(rawCpusvn, rawPcesvn, pceid, pckCertData, tcbI
 
         // create structure for collecting PCK certs that match TCB level
         let tcbPckCertsBuckets = createBucketsForCertificatesByTcb(tcbInfo);
+        const bucketForNotMatchingCerts = [];
         // match pck certs to proper pckCertSelection info
         pckCerts.forEach(pckCert => {
+            let wasAdded = false;
             for (const tcbBucket of tcbPckCertsBuckets) {
                 try {
                     if (pckCert.tcb.compare(tcbBucket.tcb) >= 0) { // pck cert is greater or equal
@@ -56,6 +58,7 @@ export function selectBestPckCert(rawCpusvn, rawPcesvn, pceid, pckCertData, tcbI
                         } else { // Insert at the correct position
                             tcbBucket.certs.splice(index, 0, pckCert);
                         }
+                        wasAdded = true;
                         break;
                     }
                 } catch (e) {
@@ -66,8 +69,12 @@ export function selectBestPckCert(rawCpusvn, rawPcesvn, pceid, pckCertData, tcbI
                     }
                 }
             }
-            // if cert does not match any TCB level it is not valid - omit
+            // if cert does not match any TCB level it is not valid - adding to extra bucket
+            if (!wasAdded) {
+                bucketForNotMatchingCerts.push(pckCert);
+            }
         });
+        tcbPckCertsBuckets.push({ certs: bucketForNotMatchingCerts });
 
         const rawTCB = new Tcb(rawCpusvn, littleEndianHexStringToInteger(rawPcesvn));
         // browsing all the buckets to find the best suitable PCK cert for given raw TCB

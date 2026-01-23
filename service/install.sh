@@ -9,6 +9,8 @@ YELLOW='\033[1;33m'
 RED='\033[1;31m'
 NC='\033[0m'
 
+export NODE_ENV=production
+
 function version_ge() { test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$1" || test "$1" = "$2"; }
 
 # check nodejs version

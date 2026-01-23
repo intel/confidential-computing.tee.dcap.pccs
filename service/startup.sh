@@ -120,7 +120,7 @@ ${GRAY}┌───────────────────────�
 │          PCCS service (daemon) startup has been SKIPPED.                      │
 └───────────────────────────────────────────────────────────────────────────────┘${RESET}
 ┋ You can start PCCS manually by running: 
-┋    ${CYAN}$(get_manual_command "cd ${PCCS_HOME} && /usr/bin/node ./pccs_server.js")${RESET}
+┋    ${CYAN}$(get_manual_command "cd ${PCCS_HOME} && NODE_ENV=production /usr/bin/node ./pccs_server.js")${RESET}
 ┋
 EOF
         )"

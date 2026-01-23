@@ -49,7 +49,7 @@ update_spec() {
     
     sed -i "s#@install_path@#${PCCS_ADMIN_PACKAGE_PATH}/${PCCS_ADMIN_PACKAGE_INSTALL_DIR_NAME}#" SPECS/${PCCS_ADMIN_PACKAGE_NAME}.spec
     sed -i "s/@version@/${TOOL_VERSION}/" SPECS/${PCCS_ADMIN_PACKAGE_NAME}.spec
-    sed -i "s#@date@#$(date +"%a %b %-d %Y")#" SPECS/${PCCS_ADMIN_PACKAGE_NAME}.spec
+    sed -i "s#@date@#$(date +"%a %b %d %Y")#" SPECS/${PCCS_ADMIN_PACKAGE_NAME}.spec
     sed -i "s#@main_script_name@#${PCCS_ADMIN_MAIN_SCRIPT_NAME}#" SPECS/${PCCS_ADMIN_PACKAGE_NAME}.spec
     sed -i "s#@pkg_wrapper_script_name@#${PCCS_ADMIN_WRAPPER_SCRIPT_NAME}#" SPECS/${PCCS_ADMIN_PACKAGE_NAME}.spec
 

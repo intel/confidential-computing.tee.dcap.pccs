@@ -35,6 +35,9 @@ RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | b
 # Set NVM_DIR so we can use it in subsequent commands
 ENV NVM_DIR=/root/.nvm
 
+# Set NODE_ENV to production
+ENV NODE_ENV=production
+
 # Install specific version of Node using nvm
 # Source nvm in each RUN command to ensure it's available
 RUN . "$NVM_DIR/nvm.sh" && nvm install $NODE_VERSION && nvm use $NODE_VERSION
@@ -59,6 +62,8 @@ RUN npm config set proxy $http_proxy \
 FROM docker.io/library/debian:12-slim
 
 ARG NODE_VERSION
+# Set NODE_ENV to production
+ENV NODE_ENV=production
 
 # Create user and group before copying files
 ARG USER=pccs

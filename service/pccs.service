@@ -8,6 +8,7 @@ Type=simple
 User=pccs
 WorkingDirectory=/opt/intel/sgx-dcap-pccs/
 EnvironmentFile=/etc/environment
+Environment=NODE_ENV=production
 ExecStart=/usr/bin/node /opt/intel/sgx-dcap-pccs/pccs_server.js
 Restart=on-failure
 RestartSec=15s

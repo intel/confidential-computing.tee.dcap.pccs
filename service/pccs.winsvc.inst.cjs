@@ -5,6 +5,10 @@ var svc = new Service({
   name:'Intel(R) SGX PCK Certificate Caching Service',
   description: 'PCK Certificate Caching Service for Intel SGX DCAP',
   script: require('path').join(__dirname,'pccs_server.js'),
+  env: [{
+      name: 'NODE_ENV',
+      value: 'production' // Set NODE_ENV to production
+  }],
   nodeOptions: [
   ]
   //,workingDirectory: '...'

@@ -11,6 +11,7 @@
     "caw": "^2.0.1",
     "cls-hooked": "^4.2.2",
     "config": "^3.3.12",
+    "cross-env": "^10.1.0",
     "express": "^4.22.1",
     "got": "^11.8.6",
     "morgan": "^1.10.1",
@@ -21,6 +22,10 @@
     "umzug": "^3.8.2",
     "winston": "^3.18.3"
   },
+  "devDependencies": {
+    "chai": "^6.2.1",
+    "mocha": "^11.7.5"
+  },
   "engines": {
     "node": ">= 18.17.0"
   },
@@ -28,6 +33,7 @@
     "tar": "^7.5.4"
   },
   "scripts": {
-    "start": "node pccs_server.js"
+    "start": "cross-env NODE_ENV=production node pccs_server.js",
+    "test": "mocha"
   }
 }

@@ -4,6 +4,8 @@ call mkdir logs
 
 echo Install npm packages ......
 
+set NODE_ENV=production
+
 call npm install
 
 call npm audit
