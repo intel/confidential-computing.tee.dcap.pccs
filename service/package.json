@@ -29,6 +29,9 @@
   "engines": {
     "node": ">= 18.17.0"
   },
+  "overrides": {
+    "tar": "^7.5.4"
+  },
   "scripts": {
     "start": "cross-env NODE_ENV=production node pccs_server.js",
     "test": "mocha"
