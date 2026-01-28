@@ -193,8 +193,19 @@ function createBucketsForCertificatesByTcb(tcbInfo) {
         tcbLevel.tcb.sgxtcbcomponents.forEach(component => cpusvn.push(component.svn.toString(16).toUpperCase().padStart(2,'0')));
         return { tcb: new Tcb(cpusvn.join(''), tcbLevel.tcb.pcesvn), certs: [] };
     });
-    // sort tcbinfo (in case it wasn't sorted)
-    tcbPckCertsBuckets.sort((x,y) => y.tcb.compare(x.tcb));
+    // sort tcbinfo (in case it wasn't sorted) - handle non-comparable TCBs
+    tcbPckCertsBuckets.sort((x, y) => {
+        try {
+            return y.tcb.compare(x.tcb);
+        } catch (e) {
+            if (e instanceof TcbNonComparableError) {
+                // If TCBs are not comparable, maintain original order (return 0)
+                return 0;
+            } else {
+                throw e;
+            }
+        }
+    });
     return tcbPckCertsBuckets;
 }
 

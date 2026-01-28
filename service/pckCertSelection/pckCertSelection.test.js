@@ -105,7 +105,6 @@ const errorMessages = {
     parsingPckCertsFailed: 'Parsing PCK certificate from DB failed',
     noCertificateFound: 'No certificate found for given platform',
     ppidMismatch: 'PPIDs are not the same in every PCK certificate',
-    nonComparableTcb: 'TCBs are not comparable',
     emptyTcbLevels: 'Empty TCB Levels in in TCB Info',
     invalidTcbLevels: 'Invalid TCB levels',
     pceidMismatch: (tcbPceId, platformPceId) => `PCEID in TCB Info (${tcbPceId}) is different than platform PCEID (${platformPceId})`,
@@ -253,6 +252,26 @@ describe('pckCertSelection', () => {
                     validTestData.pckCertData, validTestData.tcbInfo);
                 expect(result.tcbm).to.equal('030302020401000300000000000000000B00');
             });
+
+            it('should select cert even if tcb levels are not comparable with each other and unsorted', () => {
+                const rawCpusvn = '04040202040100030000000000000000';
+                const tcbInfo = {
+                    ...validTestData.tcbInfo,
+                    tcbLevels: [
+                        validTestData.tcbInfo.tcbLevels[1], // lower tcb level
+                        { // non comparable tcb
+                            tcb: {
+                                sgxtcbcomponents: Array(16).fill({ svn: 9 }), // higher than both tcb level
+                                pcesvn: 0 // lower than both tcb level
+                            }
+                        },
+                        validTestData.tcbInfo.tcbLevels[0] // higher tcb level that is matching input data
+                    ]
+                };
+                const result = selectBestPckCert(rawCpusvn, validTestData.rawPcesvn, validTestData.pceid,
+                    validTestData.pckCertData, tcbInfo);
+                expect(result.tcbm).to.equal('040402020401000300000000000000000B00');
+            });
         });
 
         describe('Certificate Selection - Negative Cases', () => {
@@ -276,7 +295,8 @@ describe('pckCertSelection', () => {
                 expect(() => selectBestPckCert(
                     '01010202010100030000000000000000',
                     '0400', validTestData.pceid,
-                    validTestData.pckCertData, validTestData.tcbInfo));
+                    validTestData.pckCertData, validTestData.tcbInfo))
+                    .to.throw(errorMessages.noCertificateFound);
             });
 
             it('should throw error when no pck certs', () => {
@@ -365,29 +385,6 @@ describe('pckCertSelection', () => {
                 expect(() => selectBestPckCert(validTestData.rawCpusvn, validTestData.rawPcesvn,
                     validTestData.pceid, validTestData.pckCertData, tcbInfo))
                     .to.throw(errorMessages.tcbTypeMismatch(1));
-            });
-
-            it('should throw nonComparableTcb error when tcb levels are not comparable to be sorted', () => {
-                const tcbInfo = {
-                    ...validTestData.tcbInfo,
-                    tcbLevels: [
-                        {
-                            tcb: {
-                                sgxtcbcomponents: Array(16).fill({ svn: 1 }), // Low TCB
-                                pcesvn: 9
-                            }
-                        },
-                        {
-                            tcb: {
-                                sgxtcbcomponents: Array(16).fill({ svn: 9 }), // High TCB
-                                pcesvn: 1
-                            }
-                        },
-                    ]
-                };
-                expect(() => selectBestPckCert(validTestData.rawCpusvn, validTestData.rawPcesvn,
-                    validTestData.pceid, validTestData.pckCertData, tcbInfo))
-                    .to.throw(errorMessages.nonComparableTcb);
             });
         });
 
