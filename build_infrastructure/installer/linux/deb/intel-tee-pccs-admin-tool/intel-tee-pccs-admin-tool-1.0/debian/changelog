@@ -1,6 +1,12 @@
-intel-tee-pccs-admin-tool (1.0-1) unstable; urgency=low
+intel-tee-pccs-admin-tool (9.9.9.9-1) unstable; urgency=low
+
+  * Installer: moved Python Virtual Environment to '.venv'
+
+ -- Intel Confidential Computing Team <confidential.computing@intel.com>  Fri, 01 Jan 2100 00:00:00 +0000
+
+intel-tee-pccs-admin-tool (1.24.100.2-all1) unstable; urgency=low
 
   * Initial packaged release of pccsadmin.py.
     Follows the former pccsadmin.py (multi-purpose) tool's split into (PCCS-scoped)pccsadmin.py and pcsclient.py
 
- -- Intel Confidential Computing Team <confidential.computing@intel.com>  Wed, 01 Oct 2025 13:01:21 +0100
+ -- Intel Confidential Computing Team <confidential.computing@intel.com>  Thu, 18 Dec 2025 13:13:28 +0000

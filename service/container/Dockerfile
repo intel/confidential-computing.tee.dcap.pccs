@@ -13,7 +13,7 @@ ARG BUILD_OUTPUT_DIR=${SRC_OUTPUT_DIR}/service
 FROM docker.io/library/debian:12 AS builder
 
 # Define arguments used across multiple stages
-ARG DCAP_VERSION=DCAP_1.24
+ARG DCAP_VERSION=DCAP_1.25
 ARG SRC_LOCATION=https://github.com/intel/confidential-computing.tee.dcap.pccs.git
 ARG NODE_VERSION
 
@@ -34,6 +34,9 @@ RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | b
 
 # Set NVM_DIR so we can use it in subsequent commands
 ENV NVM_DIR=/root/.nvm
+
+# Set NODE_ENV to production
+ENV NODE_ENV=production
 
 # Install specific version of Node using nvm
 # Source nvm in each RUN command to ensure it's available
@@ -59,6 +62,8 @@ RUN npm config set proxy $http_proxy \
 FROM docker.io/library/debian:12-slim
 
 ARG NODE_VERSION
+# Set NODE_ENV to production
+ENV NODE_ENV=production
 
 # Create user and group before copying files
 ARG USER=pccs

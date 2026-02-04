@@ -1,32 +1,32 @@
 /*
- * Copyright (C) 2025 Intel Corporation. All rights reserved.
+ * Copyright (C) 2025 Intel Corporation
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted provided that the following conditions are met:
  *
- *   * Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *   * Redistributions in binary form must reproduce the above copyright
- *     notice, this list of conditions and the following disclaimer in
- *     the documentation and/or other materials provided with the
- *     distribution.
- *   * Neither the name of Intel Corporation nor the names of its
- *     contributors may be used to endorse or promote products derived
- *     from this software without specific prior written permission.
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ * 3. Neither the name of the copyright holder nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS
+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
+ * OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+ * OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+ * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 import X509 from '../x509/x509.js';
@@ -44,8 +44,10 @@ export function selectBestPckCert(rawCpusvn, rawPcesvn, pceid, pckCertData, tcbI
 
         // create structure for collecting PCK certs that match TCB level
         let tcbPckCertsBuckets = createBucketsForCertificatesByTcb(tcbInfo);
+        const bucketForNotMatchingCerts = [];
         // match pck certs to proper pckCertSelection info
         pckCerts.forEach(pckCert => {
+            let wasAdded = false;
             for (const tcbBucket of tcbPckCertsBuckets) {
                 try {
                     if (pckCert.tcb.compare(tcbBucket.tcb) >= 0) { // pck cert is greater or equal
@@ -56,6 +58,7 @@ export function selectBestPckCert(rawCpusvn, rawPcesvn, pceid, pckCertData, tcbI
                         } else { // Insert at the correct position
                             tcbBucket.certs.splice(index, 0, pckCert);
                         }
+                        wasAdded = true;
                         break;
                     }
                 } catch (e) {
@@ -66,8 +69,12 @@ export function selectBestPckCert(rawCpusvn, rawPcesvn, pceid, pckCertData, tcbI
                     }
                 }
             }
-            // if cert does not match any TCB level it is not valid - omit
+            // if cert does not match any TCB level it is not valid - adding to extra bucket
+            if (!wasAdded) {
+                bucketForNotMatchingCerts.push(pckCert);
+            }
         });
+        tcbPckCertsBuckets.push({ certs: bucketForNotMatchingCerts });
 
         const rawTCB = new Tcb(rawCpusvn, littleEndianHexStringToInteger(rawPcesvn));
         // browsing all the buckets to find the best suitable PCK cert for given raw TCB
@@ -142,6 +149,20 @@ function validateInput(pceId, pckCerts, tcbInfo) {
         throw new Error(util.format('PCEID in TCB Info (%s) is different than platform PCEID (%s)', tcbInfo.pceId, pceId));
     }
 
+    if (!tcbInfo.tcbLevels?.length) {
+        throw new Error('Empty TCB Levels in in TCB Info');
+    }
+
+    tcbInfo.tcbLevels.forEach((tcbLevel, index) => {
+        if (!tcbLevel.tcb?.sgxtcbcomponents?.length) {
+            throw new Error(util.format('Invalid TCB levels: Level %d missing sgxtcbcomponents', index));
+        }
+        const pcesvn = tcbLevel.tcb?.pcesvn;
+        if (!Number.isInteger(pcesvn) || pcesvn < 0) {
+            throw new Error(util.format('Invalid TCB levels: Level %d invalid pcesvn (%s)', index, pcesvn));
+        }
+    });
+
     let ppid;
     pckCerts.forEach(pckCert => {
         if (pckCert.x509.version !== Constants.PCK_CERT_VERSION) {
@@ -172,8 +193,19 @@ function createBucketsForCertificatesByTcb(tcbInfo) {
         tcbLevel.tcb.sgxtcbcomponents.forEach(component => cpusvn.push(component.svn.toString(16).toUpperCase().padStart(2,'0')));
         return { tcb: new Tcb(cpusvn.join(''), tcbLevel.tcb.pcesvn), certs: [] };
     });
-    // sort tcbinfo (in case it wasn't sorted)
-    tcbPckCertsBuckets.sort((x,y) => y.tcb.compare(x.tcb));
+    // sort tcbinfo (in case it wasn't sorted) - handle non-comparable TCBs
+    tcbPckCertsBuckets.sort((x, y) => {
+        try {
+            return y.tcb.compare(x.tcb);
+        } catch (e) {
+            if (e instanceof TcbNonComparableError) {
+                // If TCBs are not comparable, maintain original order (return 0)
+                return 0;
+            } else {
+                throw e;
+            }
+        }
+    });
     return tcbPckCertsBuckets;
 }
 

@@ -4,7 +4,7 @@
 #
 
 %define _install_path @install_path@
-%define _venv_dir @install_path@/venv
+%define _venv_dir @install_path@/.venv
 %define _main_script_name @main_script_name@
 %define _wrapper_script_name @pkg_wrapper_script_name@
 %define _license_file COPYING
@@ -107,6 +107,10 @@ function on_pip_error() {
     exit ${error_code}
 }
 
+if [ -d "%{_venv_dir}" ]; then
+    echo "Removing old virtual environment at %{_venv_dir}"
+    rm -rf "%{_venv_dir}"
+fi
 echo "Creating virtual environment..."
 %{python_interpreter} -m venv "%{_venv_dir}"
 
@@ -131,6 +135,11 @@ trap - ERR
 
 echo "Virtual environment setup complete."
 
+
+%posttrans
+# Note: due to a broken package in 1.24 release (which deletes these files unconditionally in %preun which runs after %post (new),
+#        we're installing them at the end of transaction).
+#       If this is deemed too late, it can be moved back inside %post, but only AFTER 1.24 release is out of support.
 echo -n "Creating wrapper script at '%{_install_path}/%{_wrapper_script_name}' and linking to /usr/local/bin/..."
 
 cat <<EOF > "%{_install_path}/%{_wrapper_script_name}"
@@ -145,8 +154,21 @@ ln -sf "%{_install_path}/%{_wrapper_script_name}" /usr/local/bin/%{_wrapper_scri
 echo "DONE"
 echo "Installation successful. Run \`pccs-admin-tool\` to start using the tool."
 
-
 %preun
+# Note this cleanup part runs also on upgrade path (after the %post of the new package), so that we always start without cached files in a fresh venv, similar to DEB installer logic
+#
+if [ -d "%{_install_path}" ]; then
+    #remove any __pycache__ remnant dirs which may have been created in "wrong" location if user launched the script w/o wrapper script
+    find "%{_install_path}" -type d -name "__pycache__" -exec rm -rf {} +
+else
+    echo "Installation path %{_install_path} does not exist. Skipping __pycache__ removal."
+fi
+
+if [ $1 -ne 0 ]; then
+    # On upgrade path, we stop the cleanup here
+    exit 0
+fi
+
 if [ -d "%{_venv_dir}" ]; then
     echo "Removing virtual environment at %{_venv_dir}"
     rm -rf "%{_venv_dir}"
@@ -161,13 +183,6 @@ else
     echo "No wrapper script found at %{_install_path}/%{_wrapper_script_name}. Skipping its removal."
 fi
 
-if [ -d "%{_install_path}" ]; then
-    #remove any __pycache__ remnant dirs which may have been created in "wrong" location if user launched the script w/o wrapper script
-    find "%{_install_path}" -type d -name "__pycache__" -exec rm -rf {} +
-else
-    echo "Installation path %{_install_path} does not exist. Skipping __pycache__ removal."
-fi
-
 # remove the symlink from /usr/local/bin
 if [ -L "/usr/local/bin/%{_wrapper_script_name}" ]; then
     echo "Removing symlink /usr/local/bin/%{_wrapper_script_name}"
@@ -179,6 +194,9 @@ fi
 
 
 %changelog
-* @date@ Intel Confidential Computing Team <confidential.computing@intel.com> - @version@
+* @date@ Intel Confidential Computing Team <confidential.computing@intel.com> - @version@-1
+- Installer: moved Python Virtual Environment to '.venv' and fixed version upgrade path (%preun upgrade guard)
+
+* Thu Dec 18 2025 Intel Confidential Computing Team <confidential.computing@intel.com> - 1.24.100.2-1
 - Initial Release of a RPM packaged version of the pccsadmin.py
   Follows the former pccsadmin.py (multi-purpose) tool's split into (PCCS-scoped)pccsadmin.py and pcsclient.py

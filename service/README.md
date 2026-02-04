@@ -207,7 +207,7 @@ In `/etc/sgx_default_qcnl.conf`, set `"use_secure_cert": true` (For Windows see 
 
 - If the PCCS was installed manually by current user, you can start it with the following command:
   ``` bash
-  node pccs_server.js
+  NODE_ENV=production node pccs_server.js
   ```
 
 ## Uninstall

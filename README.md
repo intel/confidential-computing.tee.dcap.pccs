@@ -39,6 +39,6 @@ Please follow the instructions in the [PccsAdminTool/readme.txt](PccsAdminTool/R
 Pre-packaged installers of both the **PCCS Service** (`sgx-dcap-pccs`) and the **PCCS Admin Tool** (`intel-tee-pccs-admin-tool`) are included in the OS distribution-specific package (`sgx_{rpm|deb}_local_repo.tgz`) which can be downloaded from the DCAP download site:
 
 * latest version: https://download.01.org/intel-sgx/latest/dcap-latest/linux/distro/
-* specific version (i.e. `1.24`): https://download.01.org/intel-sgx/sgx-dcap/1.24/linux/distro/
+* specific version (i.e. `1.25`): https://download.01.org/intel-sgx/sgx-dcap/1.25/linux/distro/
 
 Additionally, for Ubuntu the packages are available in the online repository hosted at https://download.01.org/intel-sgx/sgx_repo/ubuntu/ ([setup instructions](https://cc-enabling.trustedservices.intel.com/intel-tdx-enabling-guide/02/infrastructure_setup/#__tabbed_1_2)).

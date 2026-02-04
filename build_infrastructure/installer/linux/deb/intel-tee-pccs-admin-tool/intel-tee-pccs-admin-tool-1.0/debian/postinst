@@ -21,7 +21,7 @@ set -euo pipefail
 # Note: Consider https://dh-virtualenv.readthedocs.io/en/latest/usage.html instead of manually creating venv
 
 PACKAGE_PATH=@pkg_path@
-VENV_DIR="$PACKAGE_PATH/venv"
+VENV_DIR="$PACKAGE_PATH/.venv"
 MAIN_SCRIPT_NAME=@main_script_name@
 WRAPPER_SCRIPT_NAME=@pkg_wrapper_script_name@
 
