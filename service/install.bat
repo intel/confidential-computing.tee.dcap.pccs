@@ -37,7 +37,7 @@ set NODE_ENV=production
 
 call npm install
 
-call npm audit
+call npm audit --audit-level high
 if %errorlevel% equ 0 (
 	goto continue_install
 )

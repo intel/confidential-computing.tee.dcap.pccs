@@ -115,7 +115,7 @@ then
     exit $NPM_INSTALL_RESULT
 fi
 
-npm audit
+npm audit --audit-level high
 NPM_AUDIT_RESULT=$?
 if [[ $NPM_AUDIT_RESULT -ne 0 ]]
 then
