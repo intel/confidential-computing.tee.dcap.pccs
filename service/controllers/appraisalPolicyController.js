@@ -35,41 +35,41 @@ import PccsStatus from '../constants/pccs_status_code.js';
 import logger from '../utils/Logger.js';
 
 export async function putAppraisalPolicy(req, res, next) {
-  try {
-    // // call policy service
-    let id = await appraisalPolicyService.putAppraisalPolicy(req.body);
+    try {
+        // call policy service
+        const id = await appraisalPolicyService.putAppraisalPolicy(req.body);
 
-    // send response
-    res
-      .status(PccsStatus.PCCS_STATUS_SUCCESS[0])
-      .send(id);
-  } catch (err) {
-    next(err);
-  }
+        // send response
+        res
+            .status(PccsStatus.PCCS_STATUS_SUCCESS[0])
+            .send(id);
+    } catch (err) {
+        next(err);
+    }
 }
 
 export async function getAppraisalPolicy(req, res, next) {
-  try {
-    const FMSPC_SIZE = 12;
-    let fmspc = req.query.fmspc;
-    if (!fmspc || fmspc.length != FMSPC_SIZE) {
-      logger.error("fmspc is not valid : " + fmspc);
-      throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
+    try {
+        const FMSPC_SIZE = 12;
+        let fmspc = req.query.fmspc;
+        if (!fmspc || fmspc.length !== FMSPC_SIZE) {
+            logger.error(`fmspc is not valid : ${fmspc}`);
+            throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
+        }
+
+        fmspc = fmspc.toUpperCase();
+
+        const policies = await appraisalPolicyService.getDefaultAppraisalPolicies(fmspc);
+        if (policies.length === 0) {
+            logger.error(`No default appraisal policy found for fmspc : ${fmspc}`);
+            throw new PccsError(PccsStatus.PCCS_STATUS_NO_CACHE_DATA);
+        }
+
+        // send response
+        res
+            .status(PccsStatus.PCCS_STATUS_SUCCESS[0])
+            .send(policies.map(policyRecord => policyRecord.policy).join(','));
+    } catch (err) {
+        next(err);
     }
-
-    fmspc = fmspc.toUpperCase();
-
-    let policies = await appraisalPolicyService.getDefaultAppraisalPolicies(fmspc);
-    if (policies.length == 0) {
-      logger.error("No default appraisal policy found for fmspc : " + fmspc);
-      throw new PccsError(PccsStatus.PCCS_STATUS_NO_CACHE_DATA);
-    }
-
-    // send response
-    res
-      .status(PccsStatus.PCCS_STATUS_SUCCESS[0])
-      .send(policies.map(policyRecord => policyRecord.policy).join(','));
-  } catch (err) {
-    next(err);
-  }
 }

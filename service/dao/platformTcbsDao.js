@@ -32,55 +32,55 @@
 import { PlatformTcbs, sequelize } from './models/index.js';
 
 export async function upsertPlatformTcbs(
-  qe_id,
-  pce_id,
-  cpu_svn,
-  pce_svn,
-  tcbm
+    qe_id,
+    pce_id,
+    cpu_svn,
+    pce_svn,
+    tcbm
 ) {
-  return await PlatformTcbs.upsert({
-    qe_id: qe_id,
-    pce_id: pce_id,
-    cpu_svn: cpu_svn,
-    pce_svn: pce_svn,
-    tcbm: tcbm,
-  });
+    return await PlatformTcbs.upsert({
+        qe_id,
+        pce_id,
+        cpu_svn,
+        pce_svn,
+        tcbm,
+    });
 }
 
 // Query all platform TCBs that has the same fmspc
 export async function getPlatformTcbs(fmspc) {
-  let sql;
-  if (fmspc == null || fmspc == '') {
-    sql =
-      'select a.*,b.enc_ppid as enc_ppid from platform_tcbs a, platforms b ' +
-      ' where a.qe_id=b.qe_id and a.pce_id=b.pce_id';
-    return await sequelize.query(sql, { type: sequelize.QueryTypes.SELECT });
-  } else {
-    sql =
-      'select a.*,b.enc_ppid as enc_ppid from platform_tcbs a, platforms b ' +
-      ' where a.qe_id=b.qe_id and a.pce_id=b.pce_id and b.fmspc in(:FMSPC)';
-    return await sequelize.query(sql, {
-      type: sequelize.QueryTypes.SELECT,
-      replacements: { FMSPC: fmspc.toUpperCase().split(',') },
-    });
-  }
+    let sql;
+    if (!fmspc) {
+        sql =
+            'select a.*,b.enc_ppid as enc_ppid from platform_tcbs a, platforms b ' +
+            ' where a.qe_id=b.qe_id and a.pce_id=b.pce_id';
+        return await sequelize.query(sql, { type: sequelize.QueryTypes.SELECT });
+    } else {
+        sql =
+            'select a.*,b.enc_ppid as enc_ppid from platform_tcbs a, platforms b ' +
+            ' where a.qe_id=b.qe_id and a.pce_id=b.pce_id and b.fmspc in(:FMSPC)';
+        return await sequelize.query(sql, {
+            type:         sequelize.QueryTypes.SELECT,
+            replacements: { FMSPC: fmspc.toUpperCase().split(',') },
+        });
+    }
 }
 
 // Query all TCBs for a platform
 export async function getPlatformTcbsById(qe_id, pce_id) {
-  return await PlatformTcbs.findAll({
-    where: {
-      qe_id: qe_id,
-      pce_id: pce_id,
-    },
-  });
+    return await PlatformTcbs.findAll({
+        where: {
+            qe_id,
+            pce_id,
+        },
+    });
 }
 
 export async function deletePlatformTcbsById(qe_id, pce_id) {
-  return await PlatformTcbs.destroy({
-    where: {
-      qe_id: qe_id,
-      pce_id: pce_id,
-    },
-  });
+    return await PlatformTcbs.destroy({
+        where: {
+            qe_id,
+            pce_id,
+        },
+    });
 }

@@ -33,47 +33,47 @@ import { PlatformsRegistered } from './models/index.js';
 import Constants from '../constants/index.js';
 
 export async function findRegisteredPlatform(regDataJson) {
-  return await PlatformsRegistered.findOne({
-    where: {
-      qe_id: regDataJson.qe_id,
-      pce_id: regDataJson.pce_id,
-      cpu_svn: regDataJson.cpu_svn,
-      pce_svn: regDataJson.pce_svn,
-      platform_manifest: regDataJson.platform_manifest,
-      state: Constants.PLATF_REG_NEW,
-    },
-  });
+    return await PlatformsRegistered.findOne({
+        where: {
+            qe_id:             regDataJson.qe_id,
+            pce_id:            regDataJson.pce_id,
+            cpu_svn:           regDataJson.cpu_svn,
+            pce_svn:           regDataJson.pce_svn,
+            platform_manifest: regDataJson.platform_manifest,
+            state:             Constants.PLATF_REG_NEW,
+        },
+    });
 }
 
 export async function findRegisteredPlatforms(state) {
-  return await PlatformsRegistered.findAll({
-    attributes: [
-      'qe_id',
-      'pce_id',
-      'cpu_svn',
-      'pce_svn',
-      'platform_manifest',
-      'enc_ppid',
-    ],
-    where: { state: state },
-  });
+    return await PlatformsRegistered.findAll({
+        attributes: [
+            'qe_id',
+            'pce_id',
+            'cpu_svn',
+            'pce_svn',
+            'platform_manifest',
+            'enc_ppid',
+        ],
+        where: { state },
+    });
 }
 
 export async function registerPlatform(regDataJson, state) {
-  return await PlatformsRegistered.upsert({
-    qe_id: regDataJson.qe_id,
-    pce_id: regDataJson.pce_id,
-    cpu_svn: regDataJson.cpu_svn,
-    pce_svn: regDataJson.pce_svn,
-    enc_ppid: regDataJson.enc_ppid,
-    platform_manifest: regDataJson.platform_manifest,
-    state: state,
-  });
+    return await PlatformsRegistered.upsert({
+        qe_id:             regDataJson.qe_id,
+        pce_id:            regDataJson.pce_id,
+        cpu_svn:           regDataJson.cpu_svn,
+        pce_svn:           regDataJson.pce_svn,
+        enc_ppid:          regDataJson.enc_ppid,
+        platform_manifest: regDataJson.platform_manifest,
+        state,
+    });
 }
 
 export async function deleteRegisteredPlatforms(state) {
-  await PlatformsRegistered.update(
-    { state: Constants.PLATF_REG_DELETED },
-    { where: { state: state } }
-  );
+    await PlatformsRegistered.update(
+        { state: Constants.PLATF_REG_DELETED },
+        { where: { state } }
+    );
 }

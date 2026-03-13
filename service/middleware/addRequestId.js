@@ -29,15 +29,15 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 import { v4 as uuidv4 } from 'uuid';
-import { logger_namespace } from "../utils/Logger.js";
+import { loggerNamespace } from '../utils/Logger.js';
 
 export default function addRequestId(req, res, next) {
-  const headerName = 'Request-ID';
-  req['requestId'] = req.headers[headerName] || uuidv4().replace(/-/g, '');
-  res.setHeader(headerName, req.requestId);
+    const headerName = 'Request-ID';
+    req.requestId = req.headers[headerName] || uuidv4().replace(/-/g, '');
+    res.setHeader(headerName, req.requestId);
 
-  logger_namespace.run(() => {
-    logger_namespace.set('clientRequestId', req.requestId);
-    next();
-  });
+    loggerNamespace.run(() => {
+        loggerNamespace.set('clientRequestId', req.requestId);
+        next();
+    });
 }

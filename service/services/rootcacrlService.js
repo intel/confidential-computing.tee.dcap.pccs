@@ -32,23 +32,18 @@ import Constants from '../constants/index.js';
 import * as pcsCertificatesDao from '../dao/pcsCertificatesDao.js';
 import { cachingModeManager } from './caching_modes/cachingModeManager.js';
 
-
-
 export async function getRootCaCrl() {
-  let rootca = await pcsCertificatesDao.getCertificateById(
-    Constants.PROCESSOR_ROOT_CERT_ID
-  );
+    const rootca = await pcsCertificatesDao.getCertificateById(
+        Constants.PROCESSOR_ROOT_CERT_ID
+    );
 
-  let crl;
-  if (rootca != null && rootca.crl != null) {
-    crl = rootca.crl;
-  }
-  else {
-    crl = await cachingModeManager.getRootCACrlFromPCS(rootca);
-  }
+    let crl = rootca?.crl;
+    if (!crl) {
+        crl = await cachingModeManager.getRootCACrlFromPCS(rootca);
+    }
 
-  // To keep backward compatibility. 
-  crl = Buffer.from(crl, 'utf8').toString('hex');
-  
-  return crl;
+    // To keep backward compatibility.
+    crl = Buffer.from(crl, 'utf8').toString('hex');
+
+    return crl;
 }

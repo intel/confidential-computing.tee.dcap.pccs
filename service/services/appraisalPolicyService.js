@@ -39,82 +39,81 @@ import logger from '../utils/Logger.js';
 const ajv = new Ajv();
 
 function normalizeRegData(regPolicyJson) {
-  // normalize the registration data
-  regPolicyJson.fmspc = regPolicyJson.fmspc.toUpperCase();
+    // normalize the registration data
+    regPolicyJson.fmspc = regPolicyJson.fmspc.toUpperCase();
 }
 
 export async function getDefaultAppraisalPolicies(fmspc) {
-  return appraisalPolicyDao.getDefaultAppraisalPolicies(fmspc);
+    return appraisalPolicyDao.getDefaultAppraisalPolicies(fmspc);
 }
 
 export async function putAppraisalPolicy(regPolicyJson) {
-  //check parameters
-  let valid = ajv.validate(APPRAISAL_POLICY_REG_SCHEMA, regPolicyJson);
-  if (!valid) {
-    logger.error("Failed to validate the appraisal policy file.")
-    throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
-  }
+    //check parameters
+    const valid = ajv.validate(APPRAISAL_POLICY_REG_SCHEMA, regPolicyJson);
+    if (!valid) {
+        logger.error('Failed to validate the appraisal policy file.');
+        throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
+    }
 
-  // normalize registration data
-  normalizeRegData(regPolicyJson);
+    // normalize registration data
+    normalizeRegData(regPolicyJson);
 
-  const { createHash } = await import('node:crypto');
-  const id = createHash('sha384').update(regPolicyJson.policy, 'utf8').digest('hex');
-  regPolicyJson.id = id
+    const { createHash } = await import('node:crypto');
+    const id = createHash('sha384').update(regPolicyJson.policy, 'utf8').digest('hex');
+    regPolicyJson.id = id;
 
-  // get policy type
-  let payload = JSON.parse(Buffer.from(regPolicyJson.policy.split(".")[1], "base64url"));
-  regPolicyJson.type = getPolicyTypeByClassId(payload);
+    // get policy type
+    const payload = JSON.parse(Buffer.from(regPolicyJson.policy.split('.')[1], 'base64url'));
+    regPolicyJson.type = getPolicyTypeByClassId(payload);
 
-  return await sequelize.transaction(async (t) => {
-    await appraisalPolicyDao.upsertAppraisalPolicy(regPolicyJson);
-    return id;
-  });
+    return await sequelize.transaction(async() => {
+        await appraisalPolicyDao.upsertAppraisalPolicy(regPolicyJson);
+        return id;
+    });
 }
 
 const CLASS_ID_TO_TYPE_MAP = {
-  "3123ec35-8d38-4ea5-87a5-d6c48b567570": 0, // SGX
-  "9eec018b-7481-4b1c-8e1a-9f7c0c8c777f": 1, // TDX 1.0
-  "f708b97f-0fb2-4e6b-8b03-8a5bcd1221d3": 2  // TDX 1.5
+    '3123ec35-8d38-4ea5-87a5-d6c48b567570': 0, // SGX
+    '9eec018b-7481-4b1c-8e1a-9f7c0c8c777f': 1, // TDX 1.0
+    'f708b97f-0fb2-4e6b-8b03-8a5bcd1221d3': 2  // TDX 1.5
 };
 
-const tdqe_class_id = "3769258c-75e6-4bc7-8d72-d2b0e224cad2";
+const tdqe_class_id = '3769258c-75e6-4bc7-8d72-d2b0e224cad2';
 
 function getPolicyTypeByClassId(payload) {
-  if (!payload || !payload.policy_payload) {
-    throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
-  }
-
-  let policyPayload;
-  try {
-    policyPayload = JSON.parse(payload.policy_payload);
-  } catch (e) {
-    logger.error("Failed to parse appraisal policy payload.")
-    throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
-  }
-
-  if (!policyPayload.policy_array) {
-    logger.error("Policy array not found.")
-    throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
-  }
-
-  for (const policy of policyPayload.policy_array) {
-    if (!policy.environment || !policy.environment.class_id) {
-      logger.error("Invalid policy data.")
-      throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
+    if (!payload || !payload.policy_payload) {
+        throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
     }
 
-    const classId = policy.environment.class_id.toLowerCase();
-
-    if (CLASS_ID_TO_TYPE_MAP.hasOwnProperty(classId)) {
-      return CLASS_ID_TO_TYPE_MAP[classId];
+    let policyPayload;
+    try {
+        policyPayload = JSON.parse(payload.policy_payload);
+    } catch (e) {
+        logger.error(`Failed to parse appraisal policy payload: ${e.message}`);
+        throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
     }
-    else if (classId != tdqe_class_id) {
-      logger.error("Unknown policy class_id.");
-      throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);    
-    }
-  }
 
-  logger.error("Failed to get a valid policy type.");
-  throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
+    if (!policyPayload.policy_array) {
+        logger.error('Policy array not found.');
+        throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
+    }
+
+    for (const policy of policyPayload.policy_array) {
+        if (!policy.environment || !policy.environment.class_id) {
+            logger.error('Invalid policy data.');
+            throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
+        }
+
+        const classId = policy.environment.class_id.toLowerCase();
+
+        if (Object.hasOwn(CLASS_ID_TO_TYPE_MAP, classId)) {
+            return CLASS_ID_TO_TYPE_MAP[classId];
+        } else if (classId !== tdqe_class_id) {
+            logger.error('Unknown policy class_id.');
+            throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
+        }
+    }
+
+    logger.error('Failed to get a valid policy type.');
+    throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
 }

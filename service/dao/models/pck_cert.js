@@ -32,21 +32,21 @@
 import Sequelize from 'sequelize';
 
 export default class PckCert extends Sequelize.Model {
-  static init(sequelize) {
-    super.init(
-      {
-        qe_id: { type: Sequelize.DataTypes.STRING, primaryKey: true },
-        pce_id: { type: Sequelize.DataTypes.STRING, primaryKey: true },
-        tcbm: { type: Sequelize.DataTypes.STRING, primaryKey: true },
-        pck_cert: { type: Sequelize.DataTypes.BLOB },
-      },
-      {
-        tableName: 'pck_cert',
-        timestamps: true,
-        createdAt: 'created_time',
-        updatedAt: 'updated_time',
-        sequelize,
-      }
-    );
-  }
+    static init(sequelize) {
+        super.init(
+            {
+                qe_id:    { type: Sequelize.DataTypes.STRING, primaryKey: true },
+                pce_id:   { type: Sequelize.DataTypes.STRING, primaryKey: true },
+                tcbm:     { type: Sequelize.DataTypes.STRING, primaryKey: true },
+                pck_cert: { type: Sequelize.DataTypes.BLOB },
+            },
+            {
+                tableName:  'pck_cert',
+                timestamps: true,
+                createdAt:  'created_time',
+                updatedAt:  'updated_time',
+                sequelize,
+            }
+        );
+    }
 }

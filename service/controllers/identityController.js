@@ -34,46 +34,47 @@ import PccsStatus from '../constants/pccs_status_code.js';
 import Constants from '../constants/index.js';
 import * as appUtil from '../utils/apputil.js';
 import logger from '../utils/Logger.js';
+import PccsError from '../utils/PccsError.js';
 
 async function getEnclaveIdentity(req, res, next, enclave_id) {
-  try {
-    const update_type = req.query.update? req.query.update.toUpperCase():Constants.UPDATE_TYPE_STANDARD;
+    try {
+        const update_type = req.query.update ? req.query.update.toUpperCase() : Constants.UPDATE_TYPE_STANDARD;
 
-    if (update_type !== Constants.UPDATE_TYPE_STANDARD && update_type !== Constants.UPDATE_TYPE_EARLY) {
-      logger.error("Invalid update type : " + update_type);
-      throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
+        if (update_type !== Constants.UPDATE_TYPE_STANDARD && update_type !== Constants.UPDATE_TYPE_EARLY) {
+            logger.error(`Invalid update type : ${update_type}`);
+            throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
+        }
+
+        // call service
+        const version = appUtil.getApiVersionFromUrl(req.originalUrl);
+        const enclaveIdentityJson = await identityService.getEnclaveIdentity(
+            enclave_id,
+            version,
+            update_type
+        );
+
+        // send response
+        res
+            .status(PccsStatus.PCCS_STATUS_SUCCESS[0])
+            .header(
+                Constants.SGX_ENCLAVE_IDENTITY_ISSUER_CHAIN,
+                enclaveIdentityJson[Constants.SGX_ENCLAVE_IDENTITY_ISSUER_CHAIN]
+            )
+            .header('Content-Type', 'application/json')
+            .send(enclaveIdentityJson.identity);
+    } catch (err) {
+        next(err);
     }
-
-    // call service
-    let version = appUtil.get_api_version_from_url(req.originalUrl);
-    let enclaveIdentityJson = await identityService.getEnclaveIdentity(
-      enclave_id,
-      version,
-      update_type
-    );
-
-    // send response
-    res
-      .status(PccsStatus.PCCS_STATUS_SUCCESS[0])
-      .header(
-        Constants.SGX_ENCLAVE_IDENTITY_ISSUER_CHAIN,
-        enclaveIdentityJson[Constants.SGX_ENCLAVE_IDENTITY_ISSUER_CHAIN]
-      )
-      .header('Content-Type', 'application/json')
-      .send(enclaveIdentityJson['identity']);
-  } catch (err) {
-    next(err);
-  }
 }
 
 export async function getEcdsaQeIdentity(req, res, next) {
-  return getEnclaveIdentity(req, res, next, Constants.QE_IDENTITY_ID);
+    return getEnclaveIdentity(req, res, next, Constants.QE_IDENTITY_ID);
 }
 
 export async function getQveIdentity(req, res, next) {
-  return getEnclaveIdentity(req, res, next, Constants.QVE_IDENTITY_ID);
+    return getEnclaveIdentity(req, res, next, Constants.QVE_IDENTITY_ID);
 }
 
 export async function getTdQeIdentity(req, res, next) {
-  return getEnclaveIdentity(req, res, next, Constants.TDQE_IDENTITY_ID);
+    return getEnclaveIdentity(req, res, next, Constants.TDQE_IDENTITY_ID);
 }

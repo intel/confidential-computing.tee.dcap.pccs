@@ -33,14 +33,14 @@ import { PcsVersion } from './models/index.js';
 
 // Query the version record
 export async function getPcsVersion() {
-  return await PcsVersion.findOne({});
+    return await PcsVersion.findOne({});
 }
 
 // Update or insert a record
 export async function upsertPcsVersion(api_version, server_addr) {
-  return await PcsVersion.upsert({
-    id: 1,
-    api_version: api_version,
-    server_addr: server_addr,
-  });
+    return await PcsVersion.upsert({
+        id: 1,
+        api_version,
+        server_addr,
+    });
 }

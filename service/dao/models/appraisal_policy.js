@@ -31,22 +31,22 @@
 import Sequelize from 'sequelize';
 
 export default class AppraisalPolicy extends Sequelize.Model {
-  static init(sequelize) {
-    super.init(
-      {
-        id: { type: Sequelize.DataTypes.STRING, primaryKey: true },
-        type: { type: Sequelize.DataTypes.INTEGER},
-        policy: { type: Sequelize.DataTypes.TEXT },
-        is_default: { type: Sequelize.DataTypes.INTEGER },
-        fmspc: { type: Sequelize.DataTypes.STRING},
-      },
-      {
-        tableName: 'appraisal_policies',
-        timestamps: true,
-        createdAt: 'created_time',
-        updatedAt: 'updated_time',
-        sequelize,
-      }
-    );
-  }
+    static init(sequelize) {
+        super.init(
+            {
+                id:         { type: Sequelize.DataTypes.STRING, primaryKey: true },
+                type:       { type: Sequelize.DataTypes.INTEGER },
+                policy:     { type: Sequelize.DataTypes.TEXT },
+                is_default: { type: Sequelize.DataTypes.INTEGER },
+                fmspc:      { type: Sequelize.DataTypes.STRING },
+            },
+            {
+                tableName:  'appraisal_policies',
+                timestamps: true,
+                createdAt:  'created_time',
+                updatedAt:  'updated_time',
+                sequelize,
+            }
+        );
+    }
 }

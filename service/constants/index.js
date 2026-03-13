@@ -32,10 +32,10 @@
 class Constants {}
 
 function define(name, value) {
-  Object.defineProperty(Constants, name, {
-    value: value,
-    enumerable: true,
-  });
+    Object.defineProperty(Constants, name, {
+        value,
+        enumerable: true,
+    });
 }
 
 define('PLATF_REG_NEW', 0);

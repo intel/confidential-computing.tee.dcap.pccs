@@ -28,33 +28,34 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
-import Router from 'express';
+import express from 'express';
+const expressRouter = express.Router;
 import {
-  platformsController,
-  platformCollateralController,
-  pckcertController,
-  pckcrlController,
-  tcbinfoController,
-  identityController,
-  rootcacrlController,
-  refreshController,
-  crlController,
-  appraisalPolicyController,
+    platformsController,
+    platformCollateralController,
+    pckcertController,
+    pckcrlController,
+    tcbinfoController,
+    identityController,
+    rootcacrlController,
+    refreshController,
+    crlController,
+    appraisalPolicyController,
 } from '../controllers/index.js';
 
 // express routes for our API
-const sgxRouter = Router();
-const tdxRouter = Router();
+const sgxRouter = expressRouter();
+const tdxRouter = expressRouter();
 
 //---------------- Routes for SGX APIs-------------------------------
 sgxRouter
-  .route('/platforms')
-  .post(platformsController.postPlatforms)
-  .get(platformsController.getPlatforms);
+    .route('/platforms')
+    .post(platformsController.postPlatforms)
+    .get(platformsController.getPlatforms);
 
 sgxRouter
-  .route('/platformcollateral')
-  .put(platformCollateralController.putPlatformCollateral);
+    .route('/platformcollateral')
+    .put(platformCollateralController.putPlatformCollateral);
 
 sgxRouter.route('/pckcert').get(pckcertController.getPckCert);
 
@@ -71,20 +72,19 @@ sgxRouter.route('/rootcacrl').get(rootcacrlController.getRootCaCrl);
 sgxRouter.route('/crl').get(crlController.getCrl);
 
 sgxRouter
-  .route('/refresh')
-  .post(refreshController.refreshCache)
-  .get(refreshController.refreshCache);
+    .route('/refresh')
+    .post(refreshController.refreshCache)
+    .get(refreshController.refreshCache);
 
 sgxRouter
-  .route('/appraisalpolicy')
-  .put(appraisalPolicyController.putAppraisalPolicy)
-  .get(appraisalPolicyController.getAppraisalPolicy);
+    .route('/appraisalpolicy')
+    .put(appraisalPolicyController.putAppraisalPolicy)
+    .get(appraisalPolicyController.getAppraisalPolicy);
 
 //---------------- Routes for TDX APIs-------------------------------
 tdxRouter.route('/tcb').get(tcbinfoController.getTdxTcbInfo);
 
 tdxRouter.route('/qe/identity').get(identityController.getTdQeIdentity);
-
 
 
 export { sgxRouter, tdxRouter };

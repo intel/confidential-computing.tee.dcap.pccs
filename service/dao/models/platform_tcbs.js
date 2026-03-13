@@ -31,22 +31,22 @@
 import Sequelize from 'sequelize';
 
 export default class PlatformTcbs extends Sequelize.Model {
-  static init(sequelize) {
-    super.init(
-      {
-        qe_id: { type: Sequelize.DataTypes.STRING, primaryKey: true },
-        pce_id: { type: Sequelize.DataTypes.STRING, primaryKey: true },
-        cpu_svn: { type: Sequelize.DataTypes.STRING, primaryKey: true },
-        pce_svn: { type: Sequelize.DataTypes.STRING, primaryKey: true },
-        tcbm: { type: Sequelize.DataTypes.STRING },
-      },
-      {
-        tableName: 'platform_tcbs',
-        timestamps: true,
-        createdAt: 'created_time',
-        updatedAt: 'updated_time',
-        sequelize,
-      }
-    );
-  }
+    static init(sequelize) {
+        super.init(
+            {
+                qe_id:   { type: Sequelize.DataTypes.STRING, primaryKey: true },
+                pce_id:  { type: Sequelize.DataTypes.STRING, primaryKey: true },
+                cpu_svn: { type: Sequelize.DataTypes.STRING, primaryKey: true },
+                pce_svn: { type: Sequelize.DataTypes.STRING, primaryKey: true },
+                tcbm:    { type: Sequelize.DataTypes.STRING },
+            },
+            {
+                tableName:  'platform_tcbs',
+                timestamps: true,
+                createdAt:  'created_time',
+                updatedAt:  'updated_time',
+                sequelize,
+            }
+        );
+    }
 }

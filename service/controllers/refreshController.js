@@ -35,22 +35,22 @@ import PccsError from '../utils/PccsError.js';
 import logger from '../utils/Logger.js';
 
 export async function refreshCache(req, res, next) {
-  try {
-    const type = req.query.type;
-    const fmspc = req.query.fmspc;
+    try {
+        const type = req.query.type;
+        const fmspc = req.query.fmspc;
 
-    if (type && type !== "certs") {
-      logger.error("Invalid refresh type : " + type)
-      throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
+        if (type && type !== 'certs') {
+            logger.error(`Invalid refresh type : ${type}`);
+            throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
+        }
+        // call service
+        await refreshService.refreshCache(type, fmspc);
+
+        // send response
+        res
+            .status(PccsStatus.PCCS_STATUS_SUCCESS[0])
+            .send(PccsStatus.PCCS_STATUS_SUCCESS[1]);
+    } catch (err) {
+        next(err);
     }
-    // call service
-    await refreshService.refreshCache(type, fmspc);
-
-    // send response
-    res
-      .status(PccsStatus.PCCS_STATUS_SUCCESS[0])
-      .send(PccsStatus.PCCS_STATUS_SUCCESS[1]);
-  } catch (err) {
-    next(err);
-  }
 }

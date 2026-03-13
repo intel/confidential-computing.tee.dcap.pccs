@@ -29,29 +29,32 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-var Service = require('node-windows').Service;
+'use strict';
+
+const { Service } = require('node-windows');
+const path = require('path');
 
 // Create a new service object
-var svc = new Service({
-  name:'Intel(R) SGX PCK Certificate Caching Service',
-  description: 'PCK Certificate Caching Service for Intel SGX DCAP',
-  script: require('path').join(__dirname,'pccs_server.js'),
-  env: [{
-      name: 'NODE_ENV',
-      value: 'production' // Set NODE_ENV to production
-  }],
-  nodeOptions: [
-  ]
-  //,workingDirectory: '...'
-  //, allowServiceLogon: true
+const svc = new Service({
+    name:        'Intel(R) SGX PCK Certificate Caching Service',
+    description: 'PCK Certificate Caching Service for Intel SGX DCAP',
+    script:      path.join(__dirname, 'pccs_server.js'),
+    env:         [{
+        name:  'NODE_ENV',
+        value: 'production' // Set NODE_ENV to production
+    }],
+    nodeOptions: [
+    ]
+    //,workingDirectory: '...'
+    //, allowServiceLogon: true
 });
 
 // Listen for the "install" event, which indicates the
 // process is available as a service.
-svc.on('install',function(){
-  svc.start();
-  console.log('Install Intel(R) SGX PCK Certificate Caching Service complete.');
-  console.log('The service exists: ',svc.exists);
+svc.on('install', () => {
+    svc.start();
+    console.log('Install Intel(R) SGX PCK Certificate Caching Service complete.');
+    console.log('The service exists: ', svc.exists);
 });
 
 svc.install();

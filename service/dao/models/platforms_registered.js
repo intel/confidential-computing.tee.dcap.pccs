@@ -31,43 +31,46 @@
 import Sequelize from 'sequelize';
 
 export default class PlatformsRegistered extends Sequelize.Model {
-  static init(sequelize) {
-    super.init(
-      {
-        qe_id: { type: Sequelize.DataTypes.STRING, primaryKey: true },
-        pce_id: { type: Sequelize.DataTypes.STRING, primaryKey: true },
-        cpu_svn: { type: Sequelize.DataTypes.STRING, primaryKey: true },
-        pce_svn: { type: Sequelize.DataTypes.STRING, primaryKey: true },
-        enc_ppid: {
-          type: Sequelize.DataTypes.BLOB,
-          get() {
-            return (this.getDataValue('enc_ppid') || '').toString('hex');
-          },
-          set(value) {
-            if (value) this.setDataValue('enc_ppid', Buffer.from(value, 'hex'));
-          },
-        },
-        platform_manifest: {
-          type: Sequelize.DataTypes.BLOB,
-          get() {
-            return (this.getDataValue('platform_manifest') || '').toString(
-              'hex'
-            );
-          },
-          set(value) {
-            if (value)
-              this.setDataValue('platform_manifest', Buffer.from(value, 'hex'));
-          },
-        },
-        state: { type: Sequelize.DataTypes.INTEGER },
-      },
-      {
-        tableName: 'platforms_registered',
-        timestamps: true,
-        createdAt: 'created_time',
-        updatedAt: 'updated_time',
-        sequelize,
-      }
-    );
-  }
+    static init(sequelize) {
+        super.init(
+            {
+                qe_id:    { type: Sequelize.DataTypes.STRING, primaryKey: true },
+                pce_id:   { type: Sequelize.DataTypes.STRING, primaryKey: true },
+                cpu_svn:  { type: Sequelize.DataTypes.STRING, primaryKey: true },
+                pce_svn:  { type: Sequelize.DataTypes.STRING, primaryKey: true },
+                enc_ppid: {
+                    type: Sequelize.DataTypes.BLOB,
+                    get() {
+                        return (this.getDataValue('enc_ppid') || '').toString('hex');
+                    },
+                    set(value) {
+                        if (value) {
+                            this.setDataValue('enc_ppid', Buffer.from(value, 'hex'));
+                        }
+                    },
+                },
+                platform_manifest: {
+                    type: Sequelize.DataTypes.BLOB,
+                    get() {
+                        return (this.getDataValue('platform_manifest') || '').toString(
+                            'hex'
+                        );
+                    },
+                    set(value) {
+                        if (value) {
+                            this.setDataValue('platform_manifest', Buffer.from(value, 'hex'));
+                        }
+                    },
+                },
+                state: { type: Sequelize.DataTypes.INTEGER },
+            },
+            {
+                tableName:  'platforms_registered',
+                timestamps: true,
+                createdAt:  'created_time',
+                updatedAt:  'updated_time',
+                sequelize,
+            }
+        );
+    }
 }
