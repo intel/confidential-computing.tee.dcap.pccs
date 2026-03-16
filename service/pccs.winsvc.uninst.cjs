@@ -42,8 +42,10 @@ const svc = new Service({
 
 // Listen for the "uninstall" event so we know when it's done.
 svc.on('uninstall', () => {
+    /* eslint-disable no-console */
     console.log('Uninstall Intel(R) SGX PCK Certificate Caching Service complete.');
     console.log('The service exists: ', svc.exists);
+    /* eslint-enable no-console */
 });
 
 // Uninstall the service.

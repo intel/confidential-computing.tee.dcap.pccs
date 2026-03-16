@@ -25,7 +25,10 @@
   "devDependencies": {
     "chai": "^6.2.1",
     "mocha": "^11.7.5",
-    "sinon": "^21.0.0"
+    "sinon": "^21.0.0",
+    "eslint": "^9.39.2",
+    "eslint-plugin-chai-friendly": "^1.1.0",
+    "eslint-plugin-n": "^17.23.2"
   },
   "engines": {
     "node": ">= 18.17.0"
@@ -38,6 +41,8 @@
   },
   "scripts": {
     "start": "cross-env NODE_ENV=production node pccs_server.js",
-    "test": "mocha"
+    "test": "mocha",
+    "eslint": "eslint",
+    "eslintFix": "eslint --fix"
   }
 }

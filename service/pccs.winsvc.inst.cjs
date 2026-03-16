@@ -53,8 +53,10 @@ const svc = new Service({
 // process is available as a service.
 svc.on('install', () => {
     svc.start();
+    /* eslint-disable no-console */
     console.log('Install Intel(R) SGX PCK Certificate Caching Service complete.');
     console.log('The service exists: ', svc.exists);
+    /* eslint-enable no-console */
 });
 
 svc.install();

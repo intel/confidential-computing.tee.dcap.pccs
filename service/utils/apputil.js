@@ -94,6 +94,7 @@ async function dbMigration() {
                     const sqls = fs.readFileSync(path, 'utf-8').split(';');
                     for (const sql of sqls) {
                         if (sql.trim()) {
+                            // eslint-disable-next-line no-await-in-loop
                             await sequelize.query(sql);  // Await ensures each query completes before the next begins.
                             logger.debug(sql);
                         }

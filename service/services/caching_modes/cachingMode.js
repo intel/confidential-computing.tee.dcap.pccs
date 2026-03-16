@@ -60,6 +60,7 @@ function getRawCpuSvnFromTcb(tcb) {
     );
 }
 
+/* eslint-disable no-unused-vars -- CachingMode is sort of abstract class */
 class CachingMode {
     async getPckCertFromPCS(
         qeid,
@@ -112,6 +113,7 @@ class CachingMode {
         throw new PccsError(PccsStatus.PCCS_STATUS_NO_CACHE_DATA);
     }
 }
+/* eslint-enable no-unused-vars */
 
 //////////////////////////////////////////////////////////////////////
 export class LazyCachingMode extends CachingMode {

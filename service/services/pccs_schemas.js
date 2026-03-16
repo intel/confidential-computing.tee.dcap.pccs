@@ -29,6 +29,8 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+/* eslint-disable quote-props */
+
 export const PLATFORM_REG_SCHEMA = {
     'title':       'Platform Registration',
     'description': 'Platform Registration Data Format',

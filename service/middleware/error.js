@@ -33,6 +33,7 @@ import PccsError from '../utils/PccsError.js';
 import PccsStatus from '../constants/pccs_status_code.js';
 import logger from '../utils/Logger.js';
 
+// eslint-disable-next-line no-unused-vars
 export function errorHandling(err, req, res, next) {
     if (err instanceof PccsError) {
         res.status(err.status).send(err.message);
