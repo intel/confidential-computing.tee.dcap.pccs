@@ -31,23 +31,23 @@
 import Sequelize from 'sequelize';
 
 export default class EnclaveIdentities extends Sequelize.Model {
-  static init(sequelize) {
-    super.init(
-      {
-        id: { type: Sequelize.DataTypes.INTEGER, primaryKey: true },
-        version: { type: Sequelize.DataTypes.INTEGER, primaryKey: true },
-        update_type: { type: Sequelize.DataTypes.STRING, primaryKey: true },
-        identity: { type: Sequelize.DataTypes.BLOB },
-        root_cert_id: { type: Sequelize.DataTypes.INTEGER },
-        signing_cert_id: { type: Sequelize.DataTypes.INTEGER },
-      },
-      {
-        tableName: 'enclave_identities',
-        timestamps: true,
-        createdAt: 'created_time',
-        updatedAt: 'updated_time',
-        sequelize,
-      }
-    );
-  }
+    static init(sequelize) {
+        super.init(
+            {
+                id:              { type: Sequelize.DataTypes.INTEGER, primaryKey: true },
+                version:         { type: Sequelize.DataTypes.INTEGER, primaryKey: true },
+                update_type:     { type: Sequelize.DataTypes.STRING, primaryKey: true },
+                identity:        { type: Sequelize.DataTypes.BLOB },
+                root_cert_id:    { type: Sequelize.DataTypes.INTEGER },
+                signing_cert_id: { type: Sequelize.DataTypes.INTEGER },
+            },
+            {
+                tableName:  'enclave_identities',
+                timestamps: true,
+                createdAt:  'created_time',
+                updatedAt:  'updated_time',
+                sequelize,
+            }
+        );
+    }
 }

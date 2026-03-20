@@ -37,24 +37,24 @@ import Sequelize from 'sequelize';
 
 // Update or insert a record in JSON format
 export async function upsertFmspcTcb(tcbinfoJson) {
-  return await FmspcTcbs.upsert({
-    type: tcbinfoJson.type,
-    fmspc: tcbinfoJson.fmspc,
-    version: tcbinfoJson.version,
-    update_type: tcbinfoJson.update_type,
-    tcbinfo: tcbinfoJson.tcbinfo,
-    root_cert_id: Constants.PROCESSOR_ROOT_CERT_ID,
-    signing_cert_id: Constants.PROCESSOR_SIGNING_CERT_ID,
-  });
+    return await FmspcTcbs.upsert({
+        type:            tcbinfoJson.type,
+        fmspc:           tcbinfoJson.fmspc,
+        version:         tcbinfoJson.version,
+        update_type:     tcbinfoJson.update_type,
+        tcbinfo:         tcbinfoJson.tcbinfo,
+        root_cert_id:    Constants.PROCESSOR_ROOT_CERT_ID,
+        signing_cert_id: Constants.PROCESSOR_SIGNING_CERT_ID,
+    });
 }
 
 //Query TCBInfo by fmspc
 export async function getTcbInfo(type, fmspc, version, update_type) {
-  if (typeof type == 'undefined' || typeof version == 'undefined' || typeof update_type == 'undefined') {
-    throw new PccsError(PccsStatus.PCCS_STATUS_INTERNAL_ERROR);
-  }
+    if (typeof type === 'undefined' || typeof version === 'undefined' || typeof update_type === 'undefined') {
+        throw new PccsError(PccsStatus.PCCS_STATUS_INTERNAL_ERROR);
+    }
 
-  const sql =
+    const sql =
     'select a.*,' +
     ' (select cert from pcs_certificates where id=a.root_cert_id) as root_cert,' +
     ' (select cert from pcs_certificates where id=a.signing_cert_id) as signing_cert' +
@@ -63,41 +63,46 @@ export async function getTcbInfo(type, fmspc, version, update_type) {
     ' and a.fmspc=$fmspc' +
     ' and a.version=$version' +
     ' and a.update_type=$update_type';
-  const tcbinfo = await sequelize.query(sql, {
-    type: sequelize.QueryTypes.SELECT,
-    bind: {
-      type: type,
-      fmspc: fmspc,
-      version: version,
-      update_type: update_type
-    },
-  });
-  if (tcbinfo.length == 0) return null;
-  else if (tcbinfo.length == 1) {
-    if (tcbinfo[0].root_cert != null && tcbinfo[0].signing_cert != null)
-      return tcbinfo[0];
-    else return null;
-  } else throw new PccsError(PccsStatus.PCCS_STATUS_INTERNAL_ERROR);
+    const tcbinfo = await sequelize.query(sql, {
+        type: sequelize.QueryTypes.SELECT,
+        bind: {
+            type,
+            fmspc,
+            version,
+            update_type
+        },
+    });
+    if (tcbinfo.length === 0) {
+        return null;
+    } else if (tcbinfo.length === 1) {
+        if (tcbinfo[0].root_cert !== null && tcbinfo[0].signing_cert !== null) {
+            return tcbinfo[0];
+        } else {
+            return null;
+        }
+    } else {
+        throw new PccsError(PccsStatus.PCCS_STATUS_INTERNAL_ERROR);
+    }
 }
 
 //Query all TCBInfos
 export async function getAllTcbs() {
-  return await FmspcTcbs.findAll({
-    where: {
-      type: {
-        [Sequelize.Op.not]: null,
-      },
-    },
-  });
+    return await FmspcTcbs.findAll({
+        where: {
+            type: {
+                [Sequelize.Op.not]: null,
+            },
+        },
+    });
 }
 
 //Delete TCBInfos whose type is null
 export async function deleteInvalidTcbs() {
-  return await FmspcTcbs.destroy({
-    where: {
-      type: {
-        [Sequelize.Op.is]: null,
-      },
-    },
-  });
+    return await FmspcTcbs.destroy({
+        where: {
+            type: {
+                [Sequelize.Op.is]: null,
+            },
+        },
+    });
 }

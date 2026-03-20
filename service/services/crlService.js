@@ -32,11 +32,11 @@ import * as crlCacheDao from '../dao/crlCacheDao.js';
 import { cachingModeManager } from './caching_modes/cachingModeManager.js';
 
 export async function getCrl(uri) {
-  let crl = await crlCacheDao.getCrl(uri);
+    let crl = await crlCacheDao.getCrl(uri);
 
-  if (!crl) {
-    crl = await cachingModeManager.getCrlFromPCS(uri);
-  }
+    if (!crl) {
+        crl = await cachingModeManager.getCrlFromPCS(uri);
+    }
 
-  return crl;
+    return crl;
 }

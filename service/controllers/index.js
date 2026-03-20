@@ -41,14 +41,14 @@ import * as crlController from './crlController.js';
 import * as appraisalPolicyController from './appraisalPolicyController.js';
 
 export {
-  platformsController,
-  platformCollateralController,
-  pckcertController,
-  pckcrlController,
-  tcbinfoController,
-  identityController,
-  rootcacrlController,
-  refreshController,
-  crlController,
-  appraisalPolicyController,
+    platformsController,
+    platformCollateralController,
+    pckcertController,
+    pckcrlController,
+    tcbinfoController,
+    identityController,
+    rootcacrlController,
+    refreshController,
+    crlController,
+    appraisalPolicyController,
 };

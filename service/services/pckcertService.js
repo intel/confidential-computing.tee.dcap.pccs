@@ -37,107 +37,109 @@ import * as platformsDao from '../dao/platformsDao.js';
 import * as fmspcTcbDao from '../dao/fmspcTcbDao.js';
 import * as pckCertchainDao from '../dao/pckCertchainDao.js';
 import { cachingModeManager } from './caching_modes/cachingModeManager.js';
-import { selectBestPckCert } from "../pckCertSelection/pckCertSelection.js";
+import { selectBestPckCert } from '../pckCertSelection/pckCertSelection.js';
+import logger from '../utils/Logger.js';
 
 // If a new raw TCB was reported, needs to run PCK Cert Selection for this raw TCB
 export async function pckCertSelection(
-  qeid,
-  cpusvn,
-  pcesvn,
-  pceid,
-  enc_ppid,
-  fmspc,
-  ca
-) {
-  let result = {};
-  let pck_certs = await pckcertDao.getCerts(qeid, pceid);
-  if (pck_certs == null)
-    throw new PccsError(PccsStatus.PCCS_STATUS_NO_CACHE_DATA);
-
-  // Always use SGX tcb info for PCK cert selection
-  let tcbinfo = await fmspcTcbDao.getTcbInfo(Constants.PROD_TYPE_SGX, fmspc, global.PCS_VERSION, Constants.UPDATE_TYPE_EARLY);
-  if (tcbinfo == null) {
-    tcbinfo = await fmspcTcbDao.getTcbInfo(Constants.PROD_TYPE_SGX, fmspc, global.PCS_VERSION, Constants.UPDATE_TYPE_STANDARD);
-  }
-  if (tcbinfo == null || tcbinfo.tcbinfo == null) {
-    logger.error("No TCB info for the fmspc : " + fmspc);
-    throw new PccsError(PccsStatus.PCCS_STATUS_NO_CACHE_DATA);
-  }
-
-  let tcbInfoObject = JSON.parse(tcbinfo.tcbinfo.toString('utf8')).tcbInfo;
-
-  let selectedPckCert;
-  try {
-    selectedPckCert = selectBestPckCert(cpusvn, pcesvn, pceid, pck_certs, tcbInfoObject);
-  } catch (err) {
-    throw new PccsError(PccsStatus.PCCS_STATUS_NO_CACHE_DATA);
-  }
-
-  let certchain = await pckCertchainDao.getPckCertChain(ca);
-  if (certchain == null) {
-    logger.error("No certchain for : " + ca);
-    throw new PccsError(PccsStatus.PCCS_STATUS_NO_CACHE_DATA);
-  }
-
-  result[Constants.SGX_TCBM] = selectedPckCert.tcbm;
-  result[Constants.SGX_FMSPC] = fmspc;
-  result[Constants.SGX_PCK_CERTIFICATE_CA_TYPE] = ca;
-  result[Constants.SGX_PCK_CERTIFICATE_ISSUER_CHAIN] =
-    certchain.intmd_cert + certchain.root_cert;
-  result['cert'] = selectedPckCert.pck_cert;
-
-  // create an entry for the new TCB level in platform_tcbs table
-  await platformTcbsDao.upsertPlatformTcbs(
     qeid,
-    pceid,
     cpusvn,
     pcesvn,
-    selectedPckCert.tcbm
-  );
+    pceid,
+    enc_ppid,
+    fmspc,
+    ca
+) {
+    const pck_certs = await pckcertDao.getCerts(qeid, pceid);
+    if (pck_certs === null) {
+        throw new PccsError(PccsStatus.PCCS_STATUS_NO_CACHE_DATA);
+    }
 
-  return result;
+    // Always use SGX tcb info for PCK cert selection
+    let tcbinfo = await fmspcTcbDao.getTcbInfo(Constants.PROD_TYPE_SGX, fmspc, global.PCS_VERSION, Constants.UPDATE_TYPE_EARLY);
+    if (tcbinfo === null) {
+        tcbinfo = await fmspcTcbDao.getTcbInfo(Constants.PROD_TYPE_SGX, fmspc, global.PCS_VERSION, Constants.UPDATE_TYPE_STANDARD);
+    }
+    if (tcbinfo === null || tcbinfo.tcbinfo === null) {
+        logger.error(`No TCB info for the fmspc : ${fmspc}`);
+        throw new PccsError(PccsStatus.PCCS_STATUS_NO_CACHE_DATA);
+    }
+
+    const tcbInfoObject = JSON.parse(tcbinfo.tcbinfo.toString('utf8')).tcbInfo;
+
+    let selectedPckCert;
+    try {
+        selectedPckCert = selectBestPckCert(cpusvn, pcesvn, pceid, pck_certs, tcbInfoObject);
+    } catch {
+        throw new PccsError(PccsStatus.PCCS_STATUS_NO_CACHE_DATA);
+    }
+
+    const certchain = await pckCertchainDao.getPckCertChain(ca);
+    if (certchain === null) {
+        logger.error(`No certchain for : ${ca}`);
+        throw new PccsError(PccsStatus.PCCS_STATUS_NO_CACHE_DATA);
+    }
+
+    const result = {
+        cert: selectedPckCert.pck_cert
+    };
+    result[Constants.SGX_TCBM] = selectedPckCert.tcbm;
+    result[Constants.SGX_FMSPC] = fmspc;
+    result[Constants.SGX_PCK_CERTIFICATE_CA_TYPE] = ca;
+    result[Constants.SGX_PCK_CERTIFICATE_ISSUER_CHAIN] = certchain.intmd_cert + certchain.root_cert;
+
+    // create an entry for the new TCB level in platform_tcbs table
+    await platformTcbsDao.upsertPlatformTcbs(
+        qeid,
+        pceid,
+        cpusvn,
+        pcesvn,
+        selectedPckCert.tcbm
+    );
+
+    return result;
 }
 
 export async function getPckCert(qeid, cpusvn, pcesvn, pceid, enc_ppid) {
-  let pckcert = null;
+    let pckcert = null;
 
-  const platform = await platformsDao.getPlatform(qeid, pceid);
-  if (platform != null) {
-    // query pck cert from cache DB
-    pckcert = await pckcertDao.getCert(qeid, cpusvn, pcesvn, pceid);
-  }
-
-  let result = {};
-  if (pckcert == null) {
-    if (platform == null) {
-      result = await cachingModeManager.getPckCertFromPCS(
-        qeid,
-        cpusvn,
-        pcesvn,
-        pceid,
-        enc_ppid,
-        platform ? platform.platform_manifest : ''
-      );
-    } else {
-      // Always treat presence of platform record as platform collateral is cached
-      result = await this.pckCertSelection(
-        qeid,
-        cpusvn,
-        pcesvn,
-        pceid,
-        enc_ppid,
-        platform.fmspc,
-        platform.ca
-      );
+    const platform = await platformsDao.getPlatform(qeid, pceid);
+    if (platform !== null) {
+        // query pck cert from cache DB
+        pckcert = await pckcertDao.getCert(qeid, cpusvn, pcesvn, pceid);
     }
-  } else {
-    result[Constants.SGX_TCBM] = pckcert.tcbm;
-    result[Constants.SGX_FMSPC] = platform.fmspc;
-    result[Constants.SGX_PCK_CERTIFICATE_CA_TYPE] = platform.ca;
-    result[Constants.SGX_PCK_CERTIFICATE_ISSUER_CHAIN] =
-      pckcert.intmd_cert + pckcert.root_cert;
-    result['cert'] = pckcert.pck_cert;
-  }
 
-  return result;
+    let result = {};
+    if (pckcert === null) {
+        if (platform === null) {
+            result = await cachingModeManager.getPckCertFromPCS(
+                qeid,
+                cpusvn,
+                pcesvn,
+                pceid,
+                enc_ppid,
+                platform ? platform.platform_manifest : ''
+            );
+        } else {
+            // Always treat presence of platform record as platform collateral is cached
+            result = await pckCertSelection(
+                qeid,
+                cpusvn,
+                pcesvn,
+                pceid,
+                enc_ppid,
+                platform.fmspc,
+                platform.ca
+            );
+        }
+    } else {
+        result[Constants.SGX_TCBM] = pckcert.tcbm;
+        result[Constants.SGX_FMSPC] = platform.fmspc;
+        result[Constants.SGX_PCK_CERTIFICATE_CA_TYPE] = platform.ca;
+        result[Constants.SGX_PCK_CERTIFICATE_ISSUER_CHAIN] =
+            pckcert.intmd_cert + pckcert.root_cert;
+        result.cert = pckcert.pck_cert;
+    }
+
+    return result;
 }

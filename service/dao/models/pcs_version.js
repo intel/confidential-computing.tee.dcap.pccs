@@ -29,24 +29,23 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 import Sequelize from 'sequelize';
-import Constants from '../../constants/index.js';
 
 export default class PcsVersion extends Sequelize.Model {
-  static init(sequelize) {
-    super.init(
-      {
-        id: { type: Sequelize.DataTypes.INTEGER, primaryKey: true },
-        api_version: { type: Sequelize.DataTypes.INTEGER },
-        server_addr: { type: Sequelize.DataTypes.STRING },
-        db_version: { type: Sequelize.DataTypes.INTEGER },
-      },
-      {
-        tableName: 'pcs_version',
-        timestamps: true,
-        createdAt: 'created_time',
-        updatedAt: 'updated_time',
-        sequelize,
-      }
-    );
-  }
+    static init(sequelize) {
+        super.init(
+            {
+                id:          { type: Sequelize.DataTypes.INTEGER, primaryKey: true },
+                api_version: { type: Sequelize.DataTypes.INTEGER },
+                server_addr: { type: Sequelize.DataTypes.STRING },
+                db_version:  { type: Sequelize.DataTypes.INTEGER },
+            },
+            {
+                tableName:  'pcs_version',
+                timestamps: true,
+                createdAt:  'created_time',
+                updatedAt:  'updated_time',
+                sequelize,
+            }
+        );
+    }
 }

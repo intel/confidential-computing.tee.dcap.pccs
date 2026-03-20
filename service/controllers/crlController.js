@@ -35,33 +35,33 @@ import PccsError from '../utils/PccsError.js';
 import logger from '../utils/Logger.js';
 
 export async function getCrl(req, res, next) {
-  const MAX_URL_LENGTH = 2048;
+    const MAX_URL_LENGTH = 2048;
 
-  try {
-    // validate request parameters
-    let uri = req.query.uri;
-    if (!uri || uri.length > MAX_URL_LENGTH) {
-      logger.error("uri is not valid : " + uri);
-      throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
+    try {
+        // validate request parameters
+        const uri = req.query.uri;
+        if (!uri || uri.length > MAX_URL_LENGTH) {
+            logger.error(`uri is not valid : ${uri}`);
+            throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
+        }
+
+        // validate uri
+        const found_root = uri.match(/https:\/\/([a-zA-Z0-9-]*certificates\.trustedservices\.intel\.com|certprx\.adsdcsp\.com)\/IntelSGXRootCA\..*/);
+        const found_intermediate = uri.match(/https:\/\/([a-zA-Z0-9-]*\.?api\.trustedservices\.intel\.com|[a-zA-Z0-9-]+\.az\.sgx(prod|np)\.adsdcsp\.com)\/sgx\/certification\/v([1-9][0-9]*)\/pckcrl\?.*/);
+        if (!found_root && !found_intermediate) {
+            logger.error(`uri is not valid : ${uri}`);
+            throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
+        }
+
+        // call service
+        const crl = await crlService.getCrl(uri);
+
+        // send response
+        res
+            .status(PccsStatus.PCCS_STATUS_SUCCESS[0])
+            .header('Content-Type', 'application/pkix-crl')
+            .send(crl);
+    } catch (err) {
+        next(err);
     }
-
-    // validate uri
-    let found_root = uri.match(/https:\/\/([a-zA-Z0-9-]*certificates\.trustedservices\.intel\.com|certprx\.adsdcsp\.com)\/IntelSGXRootCA\..*/);
-    let found_intermediate = uri.match(/https:\/\/([a-zA-Z0-9-]*\.?api\.trustedservices\.intel\.com|[a-zA-Z0-9-]+\.az\.sgx(prod|np)\.adsdcsp\.com)\/sgx\/certification\/v([1-9][0-9]*)\/pckcrl\?.*/);
-    if (!found_root && !found_intermediate) {
-      logger.error("uri is not valid : " + uri);
-      throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
-    }
-
-    // call service
-    let crl = await crlService.getCrl(uri);
-
-    // send response
-    res
-      .status(PccsStatus.PCCS_STATUS_SUCCESS[0])
-      .header('Content-Type', 'application/pkix-crl')
-      .send(crl);
-  } catch (err) {
-    next(err);
-  }
 }

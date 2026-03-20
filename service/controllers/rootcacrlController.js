@@ -33,16 +33,16 @@ import { rootcacrlService } from '../services/index.js';
 import PccsStatus from '../constants/pccs_status_code.js';
 
 export async function getRootCaCrl(req, res, next) {
-  try {
-    // call service
-    let rootcacrl = await rootcacrlService.getRootCaCrl();
+    try {
+        // call service
+        const rootcacrl = await rootcacrlService.getRootCaCrl();
 
-    // send response
-    res
-      .status(PccsStatus.PCCS_STATUS_SUCCESS[0])
-      .header('Content-Type', 'application/pkix-crl')
-      .send(rootcacrl);
-  } catch (err) {
-    next(err);
-  }
+        // send response
+        res
+            .status(PccsStatus.PCCS_STATUS_SUCCESS[0])
+            .header('Content-Type', 'application/pkix-crl')
+            .send(rootcacrl);
+    } catch (err) {
+        next(err);
+    }
 }

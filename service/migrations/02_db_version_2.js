@@ -31,68 +31,68 @@
 import logger from '../utils/Logger.js';
 
 async function up(sequelize) {
-  await sequelize.transaction(async (t) => {
-    logger.info('DB Migration (Ver.1 -> 2) -- Start');
+    await sequelize.transaction(async() => {
+        logger.info('DB Migration (Ver.1 -> 2) -- Start');
 
-    // update pcs_version table
-    logger.debug('DB Migration -- Update pcs_version table');
-    let sql = 'UPDATE pcs_version SET db_version=2,api_version=3';
-    await sequelize.query(sql);
+        // update pcs_version table
+        logger.debug('DB Migration -- Update pcs_version table');
+        let sql = 'UPDATE pcs_version SET db_version=2,api_version=3';
+        await sequelize.query(sql);
 
-    // update fmspc_tcbs table
-    // this is done by 1.Create new table 2.Copy data 3.Drop old table 4.Rename new into old
-    logger.debug('DB Migration -- update fmspc_tcbs');
-    sql =
-      'CREATE TABLE IF NOT EXISTS fmspc_tcbs_temp (fmspc VARCHAR(255) NOT NULL, type INTEGER NOT NULL, ' +
-      ' tcbinfo BLOB, root_cert_id INTEGER, signing_cert_id INTEGER, ' +
-      ' created_time DATETIME NOT NULL, updated_time DATETIME NOT NULL, PRIMARY KEY(fmspc, type));';
-    await sequelize.query(sql);
+        // update fmspc_tcbs table
+        // this is done by 1.Create new table 2.Copy data 3.Drop old table 4.Rename new into old
+        logger.debug('DB Migration -- update fmspc_tcbs');
+        sql =
+            'CREATE TABLE IF NOT EXISTS fmspc_tcbs_temp (fmspc VARCHAR(255) NOT NULL, type INTEGER NOT NULL, ' +
+            ' tcbinfo BLOB, root_cert_id INTEGER, signing_cert_id INTEGER, ' +
+            ' created_time DATETIME NOT NULL, updated_time DATETIME NOT NULL, PRIMARY KEY(fmspc, type));';
+        await sequelize.query(sql);
 
-    sql =
-      'INSERT INTO fmspc_tcbs_temp (fmspc, type, tcbinfo, root_cert_id, signing_cert_id, created_time, updated_time) ' +
-      ' SELECT fmspc, 0 as type, tcbinfo, root_cert_id, signing_cert_id, created_time, updated_time ' +
-      ' FROM fmspc_tcbs ';
-    await sequelize.query(sql);
+        sql =
+            'INSERT INTO fmspc_tcbs_temp (fmspc, type, tcbinfo, root_cert_id, signing_cert_id, created_time, updated_time) ' +
+            ' SELECT fmspc, 0 as type, tcbinfo, root_cert_id, signing_cert_id, created_time, updated_time ' +
+            ' FROM fmspc_tcbs ';
+        await sequelize.query(sql);
 
-    sql = 'DROP TABLE fmspc_tcbs';
-    await sequelize.query(sql);
+        sql = 'DROP TABLE fmspc_tcbs';
+        await sequelize.query(sql);
 
-    sql = 'ALTER TABLE fmspc_tcbs_temp RENAME TO fmspc_tcbs';
-    await sequelize.query(sql);
+        sql = 'ALTER TABLE fmspc_tcbs_temp RENAME TO fmspc_tcbs';
+        await sequelize.query(sql);
 
-    // add enclave_identities table
-    logger.debug('DB Migration -- create enclave_identities table');
-    sql =
-      'CREATE TABLE IF NOT EXISTS enclave_identities (id INTEGER PRIMARY KEY, identity BLOB, root_cert_id INTEGER, ' +
-      ' signing_cert_id INTEGER, created_time DATETIME NOT NULL, updated_time DATETIME NOT NULL);';
-    await sequelize.query(sql);
+        // add enclave_identities table
+        logger.debug('DB Migration -- create enclave_identities table');
+        sql =
+            'CREATE TABLE IF NOT EXISTS enclave_identities (id INTEGER PRIMARY KEY, identity BLOB, root_cert_id INTEGER, ' +
+            ' signing_cert_id INTEGER, created_time DATETIME NOT NULL, updated_time DATETIME NOT NULL);';
+        await sequelize.query(sql);
 
-    sql =
-      'INSERT INTO enclave_identities (id, identity, root_cert_id, signing_cert_id, created_time, updated_time) ' +
-      ' SELECT 1 as id, qe_identity, root_cert_id, signing_cert_id, created_time, updated_time ' +
-      ' FROM qe_identities ';
-    await sequelize.query(sql);
-    sql =
-      'INSERT INTO enclave_identities (id, identity, root_cert_id, signing_cert_id, created_time, updated_time) ' +
-      ' SELECT 2 as id, qve_identity, root_cert_id, signing_cert_id, created_time, updated_time ' +
-      ' FROM qve_identities ';
-    await sequelize.query(sql);
+        sql =
+            'INSERT INTO enclave_identities (id, identity, root_cert_id, signing_cert_id, created_time, updated_time) ' +
+            ' SELECT 1 as id, qe_identity, root_cert_id, signing_cert_id, created_time, updated_time ' +
+            ' FROM qe_identities ';
+        await sequelize.query(sql);
+        sql =
+            'INSERT INTO enclave_identities (id, identity, root_cert_id, signing_cert_id, created_time, updated_time) ' +
+            ' SELECT 2 as id, qve_identity, root_cert_id, signing_cert_id, created_time, updated_time ' +
+            ' FROM qve_identities ';
+        await sequelize.query(sql);
 
-    sql = 'DROP TABLE qe_identities';
-    await sequelize.query(sql);
+        sql = 'DROP TABLE qe_identities';
+        await sequelize.query(sql);
 
-    sql = 'DROP TABLE qve_identities';
-    await sequelize.query(sql);
+        sql = 'DROP TABLE qve_identities';
+        await sequelize.query(sql);
 
-    // add crl_cache table
-    logger.debug('DB Migration -- create crl_cache table');
-    sql =
-      'CREATE TABLE IF NOT EXISTS crl_cache (cdp_url VARCHAR(255) PRIMARY KEY, crl BLOB, ' +
-      ' created_time DATETIME NOT NULL, updated_time DATETIME NOT NULL);';
-    await sequelize.query(sql);
+        // add crl_cache table
+        logger.debug('DB Migration -- create crl_cache table');
+        sql =
+            'CREATE TABLE IF NOT EXISTS crl_cache (cdp_url VARCHAR(255) PRIMARY KEY, crl BLOB, ' +
+            ' created_time DATETIME NOT NULL, updated_time DATETIME NOT NULL);';
+        await sequelize.query(sql);
 
-    logger.info('DB Migration -- Done.');
-  });
+        logger.info('DB Migration -- Done.');
+    });
 }
 
 export default { up };

@@ -32,10 +32,10 @@
 class PccsStatus {}
 
 function define(name, value) {
-  Object.defineProperty(PccsStatus, name, {
-    value: value,
-    enumerable: true,
-  });
+    Object.defineProperty(PccsStatus, name, {
+        value,
+        enumerable: true,
+    });
 }
 
 // REST API return codes
@@ -44,25 +44,25 @@ define('PCCS_STATUS_INVALID_REQ', [400, 'Invalid request parameters.']);
 define('PCCS_STATUS_UNAUTHORIZED', [401, 'Authentication failed.']);
 define('PCCS_STATUS_NO_CACHE_DATA', [404, 'No cache data for this platform.']);
 define('PCCS_STATUS_INTEGRITY_ERROR', [
-  460,
-  `The integrity of the data can't be verified.`,
+    460,
+    `The integrity of the data can't be verified.`,
 ]);
 define('PCCS_STATUS_PLATFORM_UNKNOWN', [
-  461,
-  'The platform was not found in the cache.',
+    461,
+    'The platform was not found in the cache.',
 ]);
 define('PCCS_STATUS_CERTS_UNAVAILABLE', [
-  462,
-  'Certificates are not available for certain TCBs.',
+    462,
+    'Certificates are not available for certain TCBs.',
 ]);
 define('PCCS_STATUS_INTERNAL_ERROR', [500, 'Internal server error occurred.']);
 define('PCCS_STATUS_SERVICE_UNAVAILABLE', [
-  503,
-  'Server is currently unable to process the request.',
+    503,
+    'Server is currently unable to process the request.',
 ]);
 define('PCCS_STATUS_PCS_ACCESS_FAILURE', [
-  502,
-  'Unable to retrieve the collateral from the Intel SGX PCS.',
+    502,
+    'Unable to retrieve the collateral from the Intel SGX PCS.',
 ]);
 
 export default PccsStatus;

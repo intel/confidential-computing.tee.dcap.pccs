@@ -36,72 +36,73 @@ import Constants from '../constants/index.js';
 import logger from '../utils/Logger.js';
 
 export async function getPckCert(req, res, next) {
-  const QEID_MAX_SIZE = 260;
-  const CPUSVN_SIZE = 32;
-  const PCESVN_SIZE = 4;
-  const PCEID_SIZE = 4;
-  const ENC_PPID_SIZE = 768;
+    const QEID_MAX_SIZE = 260;
+    const CPUSVN_SIZE = 32;
+    const PCESVN_SIZE = 4;
+    const PCEID_SIZE = 4;
+    const ENC_PPID_SIZE = 768;
 
-  try {
-    let qeid = req.query.qeid;
-    let cpusvn = req.query.cpusvn;
-    let pcesvn = req.query.pcesvn;
-    let pceid = req.query.pceid;
-    let enc_ppid = req.query.encrypted_ppid;
+    try {
+        let qeid = req.query.qeid;
+        let cpusvn = req.query.cpusvn;
+        let pcesvn = req.query.pcesvn;
+        let pceid = req.query.pceid;
+        let enc_ppid = req.query.encrypted_ppid;
 
-    // validate request parameters
-    if (!qeid || !cpusvn || !pcesvn || !pceid) {
-      logger.error("Missing parameters for GET pckcert API.");
-      throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
+        // validate request parameters
+        if (!qeid || !cpusvn || !pcesvn || !pceid) {
+            logger.error('Missing parameters for GET pckcert API.');
+            throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
+        }
+        if (
+            qeid.length > QEID_MAX_SIZE ||
+            cpusvn.length !== CPUSVN_SIZE ||
+            pcesvn.length !== PCESVN_SIZE ||
+            pceid.length !== PCEID_SIZE
+        ) {
+            logger.error('Invalid parameters for GET pckcert API.');
+            throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
+        }
+        if (enc_ppid?.length !== ENC_PPID_SIZE) {
+            logger.error('Invalid encrypted ppid for GET pckcert API.');
+            throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
+        }
+
+        // normalize the request parameters
+        qeid = qeid.toUpperCase();
+        cpusvn = cpusvn.toUpperCase();
+        pcesvn = pcesvn.toUpperCase();
+        pceid = pceid.toUpperCase();
+        if (enc_ppid) {
+            // enc_ppid can be null
+            enc_ppid = enc_ppid.toUpperCase();
+        }
+
+        // call service
+        const pckcertJson = await pckcertService.getPckCert(
+            qeid,
+            cpusvn,
+            pcesvn,
+            pceid,
+            enc_ppid
+        );
+
+        // send response
+        res
+            .status(PccsStatus.PCCS_STATUS_SUCCESS[0])
+            .header(Constants.SGX_TCBM, pckcertJson[Constants.SGX_TCBM])
+            .header(Constants.SGX_FMSPC, pckcertJson[Constants.SGX_FMSPC])
+            .header(
+                Constants.SGX_PCK_CERTIFICATE_CA_TYPE,
+                pckcertJson[Constants.SGX_PCK_CERTIFICATE_CA_TYPE]
+            )
+            .header(
+                Constants.SGX_PCK_CERTIFICATE_ISSUER_CHAIN,
+                pckcertJson[Constants.SGX_PCK_CERTIFICATE_ISSUER_CHAIN]
+            )
+            .header('Content-Type', 'application/x-pem-file')
+            .send(pckcertJson.cert);
+    } catch (err) {
+        next(err);
     }
-    if (
-      qeid.length > QEID_MAX_SIZE ||
-      cpusvn.length != CPUSVN_SIZE ||
-      pcesvn.length != PCESVN_SIZE ||
-      pceid.length != PCEID_SIZE
-    ) {
-      logger.error("Invalid parameters for GET pckcert API.");
-      throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
-    }
-    if (enc_ppid != null && enc_ppid.length != ENC_PPID_SIZE) {
-      logger.error("Invalid encrypted ppid for GET pckcert API.");
-      throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
-    }
-
-    // normalize the request parameters
-    qeid = qeid.toUpperCase();
-    cpusvn = cpusvn.toUpperCase();
-    pcesvn = pcesvn.toUpperCase();
-    pceid = pceid.toUpperCase();
-    if (enc_ppid)
-      // enc_ppid can be null
-      enc_ppid = enc_ppid.toUpperCase();
-
-    // call service
-    const pckcertJson = await pckcertService.getPckCert(
-      qeid,
-      cpusvn,
-      pcesvn,
-      pceid,
-      enc_ppid
-    );
-
-    // send response
-    res
-      .status(PccsStatus.PCCS_STATUS_SUCCESS[0])
-      .header(Constants.SGX_TCBM, pckcertJson[Constants.SGX_TCBM])
-      .header(Constants.SGX_FMSPC, pckcertJson[Constants.SGX_FMSPC])
-      .header(
-        Constants.SGX_PCK_CERTIFICATE_CA_TYPE,
-        pckcertJson[Constants.SGX_PCK_CERTIFICATE_CA_TYPE]
-      )
-      .header(
-        Constants.SGX_PCK_CERTIFICATE_ISSUER_CHAIN,
-        pckcertJson[Constants.SGX_PCK_CERTIFICATE_ISSUER_CHAIN]
-      )
-      .header('Content-Type', 'application/x-pem-file')
-      .send(pckcertJson['cert']);
-  } catch (err) {
-    next(err);
-  }
 }

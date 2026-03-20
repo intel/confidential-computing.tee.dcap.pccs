@@ -31,21 +31,21 @@
 import Sequelize from 'sequelize';
 
 export default class PckCrl extends Sequelize.Model {
-  static init(sequelize) {
-    super.init(
-      {
-        ca: { type: Sequelize.DataTypes.STRING, primaryKey: true },
-        pck_crl: { type: Sequelize.DataTypes.BLOB },
-        root_cert_id: { type: Sequelize.DataTypes.INTEGER },
-        intmd_cert_id: { type: Sequelize.DataTypes.INTEGER },
-      },
-      {
-        tableName: 'pck_crl',
-        timestamps: true,
-        createdAt: 'created_time',
-        updatedAt: 'updated_time',
-        sequelize,
-      }
-    );
-  }
+    static init(sequelize) {
+        super.init(
+            {
+                ca:            { type: Sequelize.DataTypes.STRING, primaryKey: true },
+                pck_crl:       { type: Sequelize.DataTypes.BLOB },
+                root_cert_id:  { type: Sequelize.DataTypes.INTEGER },
+                intmd_cert_id: { type: Sequelize.DataTypes.INTEGER },
+            },
+            {
+                tableName:  'pck_crl',
+                timestamps: true,
+                createdAt:  'created_time',
+                updatedAt:  'updated_time',
+                sequelize,
+            }
+        );
+    }
 }

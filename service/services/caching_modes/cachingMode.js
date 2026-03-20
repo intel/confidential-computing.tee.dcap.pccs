@@ -36,228 +36,222 @@ import * as platformsRegDao from '../../dao/platformsRegDao.js';
 import { checkQuoteVerificationCollateral } from '../logic/qvCollateralLogic.js';
 
 function intToHex(i) {
-  return ('00' + i.toString(16)).slice(-2);
+    return `00${i.toString(16)}`.slice(-2);
 }
 
 function getRawCpuSvnFromTcb(tcb) {
-  return (
-    intToHex(tcb.sgxtcbcomp01svn) +
-    intToHex(tcb.sgxtcbcomp02svn) +
-    intToHex(tcb.sgxtcbcomp03svn) +
-    intToHex(tcb.sgxtcbcomp04svn) +
-    intToHex(tcb.sgxtcbcomp05svn) +
-    intToHex(tcb.sgxtcbcomp06svn) +
-    intToHex(tcb.sgxtcbcomp07svn) +
-    intToHex(tcb.sgxtcbcomp08svn) +
-    intToHex(tcb.sgxtcbcomp09svn) +
-    intToHex(tcb.sgxtcbcomp10svn) +
-    intToHex(tcb.sgxtcbcomp11svn) +
-    intToHex(tcb.sgxtcbcomp12svn) +
-    intToHex(tcb.sgxtcbcomp13svn) +
-    intToHex(tcb.sgxtcbcomp14svn) +
-    intToHex(tcb.sgxtcbcomp15svn) +
-    intToHex(tcb.sgxtcbcomp16svn)
-  );
+    return (
+        intToHex(tcb.sgxtcbcomp01svn) +
+        intToHex(tcb.sgxtcbcomp02svn) +
+        intToHex(tcb.sgxtcbcomp03svn) +
+        intToHex(tcb.sgxtcbcomp04svn) +
+        intToHex(tcb.sgxtcbcomp05svn) +
+        intToHex(tcb.sgxtcbcomp06svn) +
+        intToHex(tcb.sgxtcbcomp07svn) +
+        intToHex(tcb.sgxtcbcomp08svn) +
+        intToHex(tcb.sgxtcbcomp09svn) +
+        intToHex(tcb.sgxtcbcomp10svn) +
+        intToHex(tcb.sgxtcbcomp11svn) +
+        intToHex(tcb.sgxtcbcomp12svn) +
+        intToHex(tcb.sgxtcbcomp13svn) +
+        intToHex(tcb.sgxtcbcomp14svn) +
+        intToHex(tcb.sgxtcbcomp15svn) +
+        intToHex(tcb.sgxtcbcomp16svn)
+    );
 }
 
+/* eslint-disable no-unused-vars -- CachingMode is sort of abstract class */
 class CachingMode {
-  async getPckCertFromPCS(
-    qeid,
-    cpusvn,
-    pcesvn,
-    pceid,
-    enc_ppid,
-    platform_manifest
-  ) {
-    throw new PccsError(PccsStatus.PCCS_STATUS_PLATFORM_UNKNOWN);
-  }
+    async getPckCertFromPCS(
+        qeid,
+        cpusvn,
+        pcesvn,
+        pceid,
+        enc_ppid,
+        platform_manifest
+    ) {
+        throw new PccsError(PccsStatus.PCCS_STATUS_PLATFORM_UNKNOWN);
+    }
 
-  async getEnclaveIdentityFromPCS(enclave_id, version, update_type) {
-    throw new PccsError(PccsStatus.PCCS_STATUS_NO_CACHE_DATA);
-  }
+    async getEnclaveIdentityFromPCS(enclave_id, version, update_type) {
+        throw new PccsError(PccsStatus.PCCS_STATUS_NO_CACHE_DATA);
+    }
 
-  async getPckCrlFromPCS(ca) {
-    throw new PccsError(PccsStatus.PCCS_STATUS_NO_CACHE_DATA);
-  }
+    async getPckCrlFromPCS(ca) {
+        throw new PccsError(PccsStatus.PCCS_STATUS_NO_CACHE_DATA);
+    }
 
-  async getRootCACrlFromPCS(rootca) {
-    throw new PccsError(PccsStatus.PCCS_STATUS_NO_CACHE_DATA);
-  }
+    async getRootCACrlFromPCS(rootca) {
+        throw new PccsError(PccsStatus.PCCS_STATUS_NO_CACHE_DATA);
+    }
 
-  async getTcbInfoFromPCS(type, fmspc, version, update_type) {
-    throw new PccsError(PccsStatus.PCCS_STATUS_NO_CACHE_DATA);
-  }
+    async getTcbInfoFromPCS(type, fmspc, version, update_type) {
+        throw new PccsError(PccsStatus.PCCS_STATUS_NO_CACHE_DATA);
+    }
 
-  isRefreshable() {
-    return false;
-  }
+    isRefreshable() {
+        return false;
+    }
 
-  async registerPlatforms(isCached, regDataJson, update) {}
+    async registerPlatforms(isCached, regDataJson, update) {}
 
-  async processNotAvailableTcbs(
-    qeid,
-    pceid,
-    enc_ppid,
-    platform_manifest,
-    pckcerts_not_available
-  ) {
-    // OFFLINE mode won't reach here
-  }
+    async processNotAvailableTcbs(
+        qeid,
+        pceid,
+        enc_ppid,
+        platform_manifest,
+        pckcerts_not_available
+    ) {
+        // OFFLINE mode won't reach here
+    }
 
-  needUpdatePlatformTcbs(hasNotAvailableCerts) {
-    // OFFLINE mode won't reach here
-  }
+    needUpdatePlatformTcbs(hasNotAvailableCerts) {
+        // OFFLINE mode won't reach here
+    }
 
-  async getCrlFromPCS(uri) {
-    throw new PccsError(PccsStatus.PCCS_STATUS_NO_CACHE_DATA);
-  }
+    async getCrlFromPCS(uri) {
+        throw new PccsError(PccsStatus.PCCS_STATUS_NO_CACHE_DATA);
+    }
 }
+/* eslint-enable no-unused-vars */
 
 //////////////////////////////////////////////////////////////////////
 export class LazyCachingMode extends CachingMode {
-  async getPckCertFromPCS(
-    qeid,
-    cpusvn,
-    pcesvn,
-    pceid,
-    enc_ppid,
-    platform_manifest
-  ) {
-    return await CommonCacheLogic.getPckCertFromPCS(
-      qeid,
-      cpusvn,
-      pcesvn,
-      pceid,
-      enc_ppid,
-      platform_manifest
-    );
-  }
-
-  async getEnclaveIdentityFromPCS(enclave_id, version, update_type) {
-    return await CommonCacheLogic.getEnclaveIdentityFromPCS(enclave_id, version, update_type);
-  }
-
-  async getPckCrlFromPCS(ca) {
-    return await CommonCacheLogic.getPckCrlFromPCS(ca);
-  }
-
-  async getRootCACrlFromPCS(rootca) {
-    return await CommonCacheLogic.getRootCACrlFromPCS(rootca);
-  }
-
-  async getCrlFromPCS(uri) {
-    return await CommonCacheLogic.getCrlFromPCS(uri);
-  }
-
-  async getTcbInfoFromPCS(type, fmspc, version, update_type) {
-    return await CommonCacheLogic.getTcbInfoFromPCS(type, fmspc, version, update_type);
-  }
-
-  isRefreshable() {
-    return true;
-  }
-
-  async registerPlatforms(isCached, regDataJson, update) {
-    if (!isCached) {
-      // Get PCK certs from Intel PCS if not cached
-      await CommonCacheLogic.getPckCertFromPCS(
-        regDataJson.qe_id,
-        regDataJson.cpu_svn,
-        regDataJson.pce_svn,
-        regDataJson.pce_id,
-        regDataJson.enc_ppid,
-        regDataJson.platform_manifest
-      );
+    async getPckCertFromPCS(
+        qeid,
+        cpusvn,
+        pcesvn,
+        pceid,
+        enc_ppid,
+        platform_manifest
+    ) {
+        return await CommonCacheLogic.getPckCertFromPCS(
+            qeid,
+            cpusvn,
+            pcesvn,
+            pceid,
+            enc_ppid,
+            platform_manifest
+        );
     }
-    // Get other collaterals if not cached
-    await checkQuoteVerificationCollateral(update);
-  }
 
-  async processNotAvailableTcbs(
-    qeid,
-    pceid,
-    enc_ppid,
-    platform_manifest,
-    pckcerts_not_available
-  ) {}
+    async getEnclaveIdentityFromPCS(enclave_id, version, update_type) {
+        return await CommonCacheLogic.getEnclaveIdentityFromPCS(enclave_id, version, update_type);
+    }
 
-  needUpdatePlatformTcbs(hasNotAvailableCerts) {
-    if (hasNotAvailableCerts) return false;
-    else return true;
-  }
+    async getPckCrlFromPCS(ca) {
+        return await CommonCacheLogic.getPckCrlFromPCS(ca);
+    }
+
+    async getRootCACrlFromPCS(rootca) {
+        return await CommonCacheLogic.getRootCACrlFromPCS(rootca);
+    }
+
+    async getCrlFromPCS(uri) {
+        return await CommonCacheLogic.getCrlFromPCS(uri);
+    }
+
+    async getTcbInfoFromPCS(type, fmspc, version, update_type) {
+        return await CommonCacheLogic.getTcbInfoFromPCS(type, fmspc, version, update_type);
+    }
+
+    isRefreshable() {
+        return true;
+    }
+
+    async registerPlatforms(isCached, regDataJson, update) {
+        if (!isCached) {
+            // Get PCK certs from Intel PCS if not cached
+            await CommonCacheLogic.getPckCertFromPCS(
+                regDataJson.qe_id,
+                regDataJson.cpu_svn,
+                regDataJson.pce_svn,
+                regDataJson.pce_id,
+                regDataJson.enc_ppid,
+                regDataJson.platform_manifest
+            );
+        }
+        // Get other collaterals if not cached
+        await checkQuoteVerificationCollateral(update);
+    }
+
+    async processNotAvailableTcbs(
+    ) {}
+
+    needUpdatePlatformTcbs(hasNotAvailableCerts) {
+        return !hasNotAvailableCerts;
+    }
 }
 
 //////////////////////////////////////////////////////////////////////
 export class ReqCachingMode extends CachingMode {
-  isRefreshable() {
-    return true;
-  }
-
-  async registerPlatforms(isCached, regDataJson, update) {
-    if (!isCached) {
-      // For REQ mode, add registration entry first, and delete it after the collaterals are retrieved
-      await platformsRegDao.registerPlatform(
-        regDataJson,
-        Constants.PLATF_REG_NEW
-      );
-
-      // Get PCK certs from Intel PCS if not cached
-      await CommonCacheLogic.getPckCertFromPCS(
-        regDataJson.qe_id,
-        regDataJson.cpu_svn,
-        regDataJson.pce_svn,
-        regDataJson.pce_id,
-        regDataJson.enc_ppid,
-        regDataJson.platform_manifest
-      );
-
-      // For REQ mode, add registration entry first, and delete it after the collaterals are retrieved
-      await platformsRegDao.registerPlatform(
-        regDataJson,
-        Constants.PLATF_REG_DELETED
-      );
+    isRefreshable() {
+        return true;
     }
-    // Get other collaterals if not cached
-    await checkQuoteVerificationCollateral(update);
-  }
 
-  async processNotAvailableTcbs(
-    qeid,
-    pceid,
-    enc_ppid,
-    platform_manifest,
-    pckcerts_not_available
-  ) {
-    // save 'Not available' platform TCBs in platform registration queue
-    for (const pckcert of pckcerts_not_available) {
-      await platformsRegDao.registerPlatform(
-        {
-          qe_id: qeid,
-          pce_id: pceid,
-          cpu_svn: getRawCpuSvnFromTcb(pckcert.tcb),
-          pce_svn: pckcert.tcb.pcesvn,
-          enc_ppid: enc_ppid,
-          platform_manifest: platform_manifest,
-        },
-        Constants.PLATF_REG_NOT_AVAILABLE
-      );
+    async registerPlatforms(isCached, regDataJson, update) {
+        if (!isCached) {
+            // For REQ mode, add registration entry first, and delete it after the collaterals are retrieved
+            await platformsRegDao.registerPlatform(
+                regDataJson,
+                Constants.PLATF_REG_NEW
+            );
+
+            // Get PCK certs from Intel PCS if not cached
+            await CommonCacheLogic.getPckCertFromPCS(
+                regDataJson.qe_id,
+                regDataJson.cpu_svn,
+                regDataJson.pce_svn,
+                regDataJson.pce_id,
+                regDataJson.enc_ppid,
+                regDataJson.platform_manifest
+            );
+
+            // For REQ mode, add registration entry first, and delete it after the collaterals are retrieved
+            await platformsRegDao.registerPlatform(
+                regDataJson,
+                Constants.PLATF_REG_DELETED
+            );
+        }
+        // Get other collaterals if not cached
+        await checkQuoteVerificationCollateral(update);
     }
-  }
 
-  needUpdatePlatformTcbs(hasNotAvailableCerts) {
-    return true;
-  }
+    async processNotAvailableTcbs(
+        qeid,
+        pceid,
+        enc_ppid,
+        platform_manifest,
+        pckcerts_not_available
+    ) {
+        // save 'Not available' platform TCBs in platform registration queue
+        await Promise.all(pckcerts_not_available.map(async pckcert => await platformsRegDao.registerPlatform(
+            {
+                qe_id:   qeid,
+                pce_id:  pceid,
+                cpu_svn: getRawCpuSvnFromTcb(pckcert.tcb),
+                pce_svn: pckcert.tcb.pcesvn,
+                enc_ppid,
+                platform_manifest,
+            },
+            Constants.PLATF_REG_NOT_AVAILABLE
+        )));
+    }
+
+    needUpdatePlatformTcbs() {
+        return true;
+    }
 }
 
 //////////////////////////////////////////////////////////////////////
 export class OfflineCachingMode extends CachingMode {
-  async registerPlatforms(isCached, regDataJson, update) {
-    if (!isCached) {
-      // add to registration table
-      await platformsRegDao.registerPlatform(
-        regDataJson,
-        Constants.PLATF_REG_NEW
-      );
+    async registerPlatforms(isCached, regDataJson) {
+        if (!isCached) {
+            // add to registration table
+            await platformsRegDao.registerPlatform(
+                regDataJson,
+                Constants.PLATF_REG_NEW
+            );
+        }
     }
-  }
 }

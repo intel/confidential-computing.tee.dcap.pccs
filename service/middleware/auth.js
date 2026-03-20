@@ -34,37 +34,37 @@ import PccsStatus from '../constants/pccs_status_code.js';
 import PccsError from '../utils/PccsError.js';
 
 export function validateUser(req, res, next) {
-  const HTTP_HEADER_USER_TOKEN = 'user-token';
-  const token = req.headers[HTTP_HEADER_USER_TOKEN];
-  if (token) {
-    let hash = Crypto.createHash('sha512');
-    hash.update(token);
-    let user_token_hash = hash.digest('hex');
+    const HTTP_HEADER_USER_TOKEN = 'user-token';
+    const token = req.headers[HTTP_HEADER_USER_TOKEN];
+    if (token) {
+        const hash = Crypto.createHash('sha512');
+        hash.update(token);
+        const userTokenHash = hash.digest('hex');
 
-    if (user_token_hash != Config.get('UserTokenHash')) {
-      throw new PccsError(PccsStatus.PCCS_STATUS_UNAUTHORIZED);
+        if (userTokenHash !== Config.get('UserTokenHash')) {
+            throw new PccsError(PccsStatus.PCCS_STATUS_UNAUTHORIZED);
+        } else {
+            next();
+        }
     } else {
-      next();
+        throw new PccsError(PccsStatus.PCCS_STATUS_UNAUTHORIZED);
     }
-  } else {
-    throw new PccsError(PccsStatus.PCCS_STATUS_UNAUTHORIZED);
-  }
 }
 
 export function validateAdmin(req, res, next) {
-  const HTTP_HEADER_ADMIN_TOKEN = 'admin-token';
-  const token = req.headers[HTTP_HEADER_ADMIN_TOKEN];
-  if (token) {
-    let hash = Crypto.createHash('sha512');
-    hash.update(token);
-    let admin_token_hash = hash.digest('hex');
+    const HTTP_HEADER_ADMIN_TOKEN = 'admin-token';
+    const token = req.headers[HTTP_HEADER_ADMIN_TOKEN];
+    if (token) {
+        const hash = Crypto.createHash('sha512');
+        hash.update(token);
+        const admin_token_hash = hash.digest('hex');
 
-    if (admin_token_hash != Config.get('AdminTokenHash')) {
-      throw new PccsError(PccsStatus.PCCS_STATUS_UNAUTHORIZED);
+        if (admin_token_hash !== Config.get('AdminTokenHash')) {
+            throw new PccsError(PccsStatus.PCCS_STATUS_UNAUTHORIZED);
+        } else {
+            next();
+        }
     } else {
-      next();
+        throw new PccsError(PccsStatus.PCCS_STATUS_UNAUTHORIZED);
     }
-  } else {
-    throw new PccsError(PccsStatus.PCCS_STATUS_UNAUTHORIZED);
-  }
 }

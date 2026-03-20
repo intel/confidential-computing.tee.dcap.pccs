@@ -36,49 +36,54 @@ import { PckCrl, sequelize } from './models/index.js';
 
 //Query a PCK CRL by ca
 export async function getPckCrl(ca) {
-  const sql =
+    const sql =
     'select a.*,' +
     ' (select cert from pcs_certificates where id=a.root_cert_id) as root_cert,' +
     ' (select cert from pcs_certificates where id=a.intmd_cert_id) as intmd_cert' +
     ' from pck_crl a ' +
     ' where a.ca=$ca';
-  const pckcrl = await sequelize.query(sql, {
-    type: sequelize.QueryTypes.SELECT,
-    bind: { ca: ca },
-  });
-  if (pckcrl.length == 0) return null;
-  else if (pckcrl.length == 1) {
-    if (pckcrl[0].root_cert != null && pckcrl[0].intmd_cert != null)
-      return pckcrl[0];
-    else return null;
-  } else throw new PccsError(PccsStatus.PCCS_STATUS_INTERNAL_ERROR);
+    const pckcrl = await sequelize.query(sql, {
+        type: sequelize.QueryTypes.SELECT,
+        bind: { ca },
+    });
+    if (pckcrl.length === 0) {
+        return null;
+    } else if (pckcrl.length === 1) {
+        if (pckcrl[0].root_cert !== null && pckcrl[0].intmd_cert !== null) {
+            return pckcrl[0];
+        } else {
+            return null;
+        }
+    } else {
+        throw new PccsError(PccsStatus.PCCS_STATUS_INTERNAL_ERROR);
+    }
 }
 
 //Query all PCK CRLs from table
 export async function getAllPckCrls() {
-  const sql =
+    const sql =
     'select a.*,' +
     ' (select cert from pcs_certificates where id=a.root_cert_id) as root_cert,' +
     ' (select cert from pcs_certificates where id=a.intmd_cert_id) as intmd_cert' +
     ' from pck_crl a ';
-  return await sequelize.query(sql, {
-    type: sequelize.QueryTypes.SELECT,
-  });
+    return await sequelize.query(sql, {
+        type: sequelize.QueryTypes.SELECT,
+    });
 }
 
 //Update or Insert a PCK CRL
 export async function upsertPckCrl(ca, crl) {
-  if (ca != Constants.CA_PROCESSOR && ca != Constants.CA_PLATFORM) {
-    throw new PccsError(PccsStatus.PCCS_STATUS_INTERNAL_ERROR);
-  }
+    if (ca !== Constants.CA_PROCESSOR && ca !== Constants.CA_PLATFORM) {
+        throw new PccsError(PccsStatus.PCCS_STATUS_INTERNAL_ERROR);
+    }
 
-  return await PckCrl.upsert({
-    ca: ca,
-    pck_crl: crl,
-    root_cert_id: Constants.PROCESSOR_ROOT_CERT_ID,
-    intmd_cert_id:
-      ca == Constants.CA_PROCESSOR
-        ? Constants.PROCESSOR_INTERMEDIATE_CERT_ID
-        : Constants.PLATFORM_INTERMEDIATE_CERT_ID,
-  });
+    return await PckCrl.upsert({
+        ca,
+        pck_crl:      crl,
+        root_cert_id: Constants.PROCESSOR_ROOT_CERT_ID,
+        intmd_cert_id:
+      ca === Constants.CA_PROCESSOR ?
+          Constants.PROCESSOR_INTERMEDIATE_CERT_ID :
+          Constants.PLATFORM_INTERMEDIATE_CERT_ID,
+    });
 }

@@ -34,16 +34,16 @@ import PckCertificate from './PckCertificate.js';
 import Tcb from './Tcb.js';
 import util from 'util';
 import Constants from '../constants/index.js';
-import { TcbNonComparableError} from '../utils/errors.js';
+import { TcbNonComparableError } from '../utils/errors.js';
 import logger from '../utils/Logger.js';
 
 export function selectBestPckCert(rawCpusvn, rawPcesvn, pceid, pckCertData, tcbInfo) {
     try {
-        let pckCerts = parsePckCerts(pckCertData);
+        const pckCerts = parsePckCerts(pckCertData);
         validateInput(pceid, pckCerts, tcbInfo);
 
         // create structure for collecting PCK certs that match TCB level
-        let tcbPckCertsBuckets = createBucketsForCertificatesByTcb(tcbInfo);
+        const tcbPckCertsBuckets = createBucketsForCertificatesByTcb(tcbInfo);
         const bucketForNotMatchingCerts = [];
         // match pck certs to proper pckCertSelection info
         pckCerts.forEach(pckCert => {
@@ -52,7 +52,7 @@ export function selectBestPckCert(rawCpusvn, rawPcesvn, pceid, pckCertData, tcbI
                 try {
                     if (pckCert.tcb.compare(tcbBucket.tcb) >= 0) { // pck cert is greater or equal
                         // we need to put PCK cert into suitable place in the bucket
-                        let index = findIndexToInsertCertIntoBucket(tcbBucket.certs, pckCert);
+                        const index = findIndexToInsertCertIntoBucket(tcbBucket.certs, pckCert);
                         if (index === -1) { // If no smaller TCB is found, append to the end
                             tcbBucket.certs.push(pckCert);
                         } else { // Insert at the correct position
@@ -80,7 +80,7 @@ export function selectBestPckCert(rawCpusvn, rawPcesvn, pceid, pckCertData, tcbI
         // browsing all the buckets to find the best suitable PCK cert for given raw TCB
         return selectBestPckCertFromTcbBuckets(rawTCB, tcbPckCertsBuckets);
     } catch (e) {
-        logger.error('Error during selection of PCK Cert: ' + e.message);
+        logger.error(`Error during selection of PCK Cert: ${e.message}`);
         throw e;
     }
 }
@@ -95,7 +95,7 @@ function findIndexToInsertCertIntoBucket(certList, pckCert) {
         } catch (e) {
             if (e instanceof TcbNonComparableError) {
                 // Note: that's the intention that even there is a cert with non-comparable tcb we skip it,
-                // leave it in that order and proceed to the next cert 
+                // leave it in that order and proceed to the next cert
                 // with the diclaimer that certs in the bucket can be unordered.
                 continue;
             } else {
@@ -128,11 +128,11 @@ function selectBestPckCertFromTcbBuckets(rawTCB, tcbPckCertsBuckets) {
 }
 
 function parsePckCerts(pckCertData) {
-    let parsedPckCerts = [];
+    const parsedPckCerts = [];
     pckCertData.forEach(pckCertDataItem => {
         const x509 = new X509();
         if (!x509.parseCert(pckCertDataItem.pck_cert)) {
-            throw new Error('Parsing PCK certificate from DB failed')
+            throw new Error('Parsing PCK certificate from DB failed');
         }
         parsedPckCerts.push(new PckCertificate(pckCertDataItem, x509, new Tcb(x509.cpusvn, x509.pcesvn)));
     });
@@ -181,7 +181,7 @@ function validateInput(pceId, pckCerts, tcbInfo) {
         if (ppid === undefined) {
             ppid = pckCert.x509.ppid;
         } else if (pckCert.x509.ppid !== ppid) {
-            throw new Error('PPIDs are not the same in every PCK certificate')
+            throw new Error('PPIDs are not the same in every PCK certificate');
         }
     });
 }
@@ -189,8 +189,8 @@ function validateInput(pceId, pckCerts, tcbInfo) {
 function createBucketsForCertificatesByTcb(tcbInfo) {
     // creating bucket for each pckCertSelection level to collect pck certs
     const tcbPckCertsBuckets = tcbInfo.tcbLevels.map(tcbLevel => {
-        let cpusvn = [];
-        tcbLevel.tcb.sgxtcbcomponents.forEach(component => cpusvn.push(component.svn.toString(16).toUpperCase().padStart(2,'0')));
+        const cpusvn = [];
+        tcbLevel.tcb.sgxtcbcomponents.forEach(component => cpusvn.push(component.svn.toString(16).toUpperCase().padStart(2, '0')));
         return { tcb: new Tcb(cpusvn.join(''), tcbLevel.tcb.pcesvn), certs: [] };
     });
     // sort tcbinfo (in case it wasn't sorted) - handle non-comparable TCBs
@@ -210,6 +210,6 @@ function createBucketsForCertificatesByTcb(tcbInfo) {
 }
 
 function littleEndianHexStringToInteger(leHexString) {
-    let beHexString = leHexString.match(/.{2}/g).reverse().join('');
+    const beHexString = leHexString.match(/.{2}/g).reverse().join('');
     return parseInt(beHexString, 16);
 }

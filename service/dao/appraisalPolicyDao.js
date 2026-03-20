@@ -33,31 +33,31 @@ import { AppraisalPolicy } from './models/index.js';
 
 // Query the appraisal policy by primary key 'id'
 export async function getAppraisalPolicy(id) {
-  return await AppraisalPolicy.findByPk(id);
+    return await AppraisalPolicy.findByPk(id);
 }
 
 export async function getDefaultAppraisalPolicies(fmspc) {
-  const policies = await AppraisalPolicy.findAll({
-    where: {
-      is_default: true,
-      fmspc: fmspc
-    },
-    attributes: ['policy'] // Only retrieve the 'policy' column
-  });
+    const policies = await AppraisalPolicy.findAll({
+        where: {
+            is_default: true,
+            fmspc
+        },
+        attributes: ['policy'] // Only retrieve the 'policy' column
+    });
 
-  return policies;
+    return policies;
 }
 
 // Update or insert a record
 export async function upsertAppraisalPolicy(apJson) {
-  if (apJson.is_default) {
-    // unset the is_default for any existing records with the same fmspc
-    await AppraisalPolicy.update(
-      { is_default: false },
-      {
-        where: { fmspc: apJson.fmspc, is_default: true },
-      }
-    );
-  }
-  return await AppraisalPolicy.upsert(apJson);
+    if (apJson.is_default) {
+        // unset the is_default for any existing records with the same fmspc
+        await AppraisalPolicy.update(
+            { is_default: false },
+            {
+                where: { fmspc: apJson.fmspc, is_default: true },
+            }
+        );
+    }
+    return await AppraisalPolicy.upsert(apJson);
 }

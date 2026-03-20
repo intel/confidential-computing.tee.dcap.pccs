@@ -29,8 +29,8 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-import util from "util";
-import _ from "lodash";
+import util from 'util';
+import _ from 'lodash';
 
 import { TcbInvalidFormatError, TcbNonComparableError } from '../utils/errors.js';
 
@@ -56,8 +56,9 @@ class Tcb {
     }
 
     compare(that) {
-        let componentsToCompare = _.zip(this.tcbComponents, that.tcbComponents);
-        let leftLower, rightLower = false;
+        const componentsToCompare = _.zip(this.tcbComponents, that.tcbComponents);
+        let leftLower = false;
+        let rightLower = false;
         componentsToCompare.forEach(component => {
             if (component[0] < component[1]) {
                 leftLower = true;

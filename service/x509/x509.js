@@ -45,77 +45,77 @@ const { Certificate } = x509;
 const { ASN1 } = asn1;
 
 class X509 {
-  constructor() {
-    if (!(this instanceof X509)) {
-      return new X509();
-    }
-
-    this.fmspc = null;
-    this.cdp_uri = null;
-    this.ca = null;
-    this.pceId = null;
-    this.ppid = null;
-    this.cpusvn = null;
-    this.pcesvn = null;
-    this.version = null;
-  }
-  parseCert(cert_buffer) {
-    try {
-      let cert = Certificate.fromPEM(cert_buffer);
-      let issuerCN = cert.issuer.attributes[0].value;
-      let extensions = cert.extensions;
-      let sgx_extensions = null;
-      let cdp_extensions = null;
-
-      this.version = cert.version;
-
-      // parse the issuer CN
-      if (issuerCN.includes('Platform')) {
-        this.ca = Constants.CA_PLATFORM;
-      } else if (issuerCN.includes('Processor')) {
-        this.ca = Constants.CA_PROCESSOR;
-      }
-
-      for (let i = 0; i < extensions.length; i++) {
-        if (extensions[i].oid === SGX_EXTENSIONS_OID) {
-          sgx_extensions = extensions[i].value;
-        } else if (extensions[i].oid === X509_EXTENSIONS_CDP_OID) {
-          cdp_extensions = extensions[i].value;
+    constructor() {
+        if (!(this instanceof X509)) {
+            return new X509();
         }
-      }
 
-      if (sgx_extensions) {
-        let asn1 = ASN1.fromDER(sgx_extensions);
-        let sgx_ext_values = asn1.value;
-        for (let i = 0; i < sgx_ext_values.length; i++) {
-          let obj = sgx_ext_values[i];
-          if (obj.value[0].tag !== TAG_OID) {
-            continue;
-          }
-          if (obj.value[0].value === SGX_EXTENSIONS_FMSPC_OID) {
-            this.fmspc = obj.value[1].value.toString('hex').toUpperCase();
-          } else if (obj.value[0].value === SGX_EXTENSIONS_PCEID_OID) {
-            this.pceId = obj.value[1].value.toString('hex').toUpperCase();
-          } else if (obj.value[0].value === SGX_EXTENSIONS_PPID_OID) {
-            this.ppid = obj.value[1].value.toString('hex').toUpperCase();
-          } else if (obj.value[0].value === SGX_EXTENSIONS_TCB_OID) {
-            this.cpusvn = obj.value[1].value[17].value[1].value.toString('hex').toUpperCase();
-            this.pcesvn = obj.value[1].value[16].value[1].value; //int value
-          }
-        }
-      }
-      if (cdp_extensions) {
-        let asn1 = ASN1.fromDER(cdp_extensions);
-        let cdp_ext_values = asn1.value;
-        this.cdp_uri = cdp_ext_values[0].value[0].value[0].value[0].value.toString();
-      }
-
-      return true;
-    } catch (err) {
-      logger.error('Failed to parse x509 cert : ' + err);
-      return false;
+        this.fmspc = null;
+        this.cdpUri = null;
+        this.ca = null;
+        this.pceId = null;
+        this.ppid = null;
+        this.cpusvn = null;
+        this.pcesvn = null;
+        this.version = null;
     }
-  }
+    parseCert(certBuffer) {
+        try {
+            const cert = Certificate.fromPEM(certBuffer);
+            const issuerCN = cert.issuer.attributes[0].value;
+            const extensions = cert.extensions;
+            let sgxExtensions = null;
+            let cdpExtensions = null;
+
+            this.version = cert.version;
+
+            // parse the issuer CN
+            if (issuerCN.includes('Platform')) {
+                this.ca = Constants.CA_PLATFORM;
+            } else if (issuerCN.includes('Processor')) {
+                this.ca = Constants.CA_PROCESSOR;
+            }
+
+            for (let i = 0; i < extensions.length; i++) {
+                if (extensions[i].oid === SGX_EXTENSIONS_OID) {
+                    sgxExtensions = extensions[i].value;
+                } else if (extensions[i].oid === X509_EXTENSIONS_CDP_OID) {
+                    cdpExtensions = extensions[i].value;
+                }
+            }
+
+            if (sgxExtensions) {
+                const asn1 = ASN1.fromDER(sgxExtensions);
+                const sgxExtValues = asn1.value;
+                for (let i = 0; i < sgxExtValues.length; i++) {
+                    const obj = sgxExtValues[i];
+                    if (obj.value[0].tag !== TAG_OID) {
+                        continue;
+                    }
+                    if (obj.value[0].value === SGX_EXTENSIONS_FMSPC_OID) {
+                        this.fmspc = obj.value[1].value.toString('hex').toUpperCase();
+                    } else if (obj.value[0].value === SGX_EXTENSIONS_PCEID_OID) {
+                        this.pceId = obj.value[1].value.toString('hex').toUpperCase();
+                    } else if (obj.value[0].value === SGX_EXTENSIONS_PPID_OID) {
+                        this.ppid = obj.value[1].value.toString('hex').toUpperCase();
+                    } else if (obj.value[0].value === SGX_EXTENSIONS_TCB_OID) {
+                        this.cpusvn = obj.value[1].value[17].value[1].value.toString('hex').toUpperCase();
+                        this.pcesvn = obj.value[1].value[16].value[1].value; //int value
+                    }
+                }
+            }
+            if (cdpExtensions) {
+                const asn1 = ASN1.fromDER(cdpExtensions);
+                const cdpExtValues = asn1.value;
+                this.cdpUri = cdpExtValues[0].value[0].value[0].value[0].value.toString();
+            }
+
+            return true;
+        } catch (err) {
+            logger.error(`Failed to parse x509 cert : ${err}`);
+            return false;
+        }
+    }
 }
 
 export default X509;

@@ -31,5 +31,5 @@
 import * as platformsDao from '../dao/platformsDao.js';
 
 export async function getCachedPlatforms(fmspc_arr) {
-  return await platformsDao.getCachedPlatformsByFmspc(fmspc_arr);
+    return await platformsDao.getCachedPlatformsByFmspc(fmspc_arr);
 }

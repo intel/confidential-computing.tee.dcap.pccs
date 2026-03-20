@@ -33,18 +33,19 @@ import PccsError from '../utils/PccsError.js';
 import PccsStatus from '../constants/pccs_status_code.js';
 import logger from '../utils/Logger.js';
 
+// eslint-disable-next-line no-unused-vars
 export function errorHandling(err, req, res, next) {
-  if (err instanceof PccsError) res.status(err.status).send(err.message);
-  else if (err instanceof SyntaxError) {
-    logger.error(err.stack);
-    res
-      .status(PccsStatus.PCCS_STATUS_INVALID_REQ[0])
-      .send(PccsStatus.PCCS_STATUS_INVALID_REQ[1]);
-  }
-  else {
-    logger.error(err.stack);
-    res
-      .status(PccsStatus.PCCS_STATUS_INTERNAL_ERROR[0])
-      .send(PccsStatus.PCCS_STATUS_INTERNAL_ERROR[1]);
-  }
+    if (err instanceof PccsError) {
+        res.status(err.status).send(err.message);
+    } else if (err instanceof SyntaxError) {
+        logger.error(err.stack);
+        res
+            .status(PccsStatus.PCCS_STATUS_INVALID_REQ[0])
+            .send(PccsStatus.PCCS_STATUS_INVALID_REQ[1]);
+    } else {
+        logger.error(err.stack);
+        res
+            .status(PccsStatus.PCCS_STATUS_INTERNAL_ERROR[0])
+            .send(PccsStatus.PCCS_STATUS_INTERNAL_ERROR[1]);
+    }
 }

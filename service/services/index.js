@@ -41,15 +41,15 @@ import * as crlService from './crlService.js';
 import * as appraisalPolicyService from './appraisalPolicyService.js';
 
 export {
-  platformsRegService,
-  platformCollateralService,
-  pckcertService,
-  pckcrlService,
-  tcbinfoService,
-  identityService,
-  rootcacrlService,
-  refreshService,
-  platformsService,
-  crlService,
-  appraisalPolicyService,
+    platformsRegService,
+    platformCollateralService,
+    pckcertService,
+    pckcrlService,
+    tcbinfoService,
+    identityService,
+    rootcacrlService,
+    refreshService,
+    platformsService,
+    crlService,
+    appraisalPolicyService,
 };

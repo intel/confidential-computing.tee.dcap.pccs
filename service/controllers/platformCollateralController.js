@@ -34,16 +34,16 @@ import PccsStatus from '../constants/pccs_status_code.js';
 import * as appUtil from '../utils/apputil.js';
 
 export async function putPlatformCollateral(req, res, next) {
-  try {
-    // call service
-    let version = appUtil.get_api_version_from_url(req.originalUrl);
-    let platf = await platformCollateralService.addPlatformCollateral(req.body, version);
+    try {
+        // call service
+        const version = appUtil.getApiVersionFromUrl(req.originalUrl);
+        await platformCollateralService.addPlatformCollateral(req.body, version);
 
-    // send response
-    res
-      .status(PccsStatus.PCCS_STATUS_SUCCESS[0])
-      .send(PccsStatus.PCCS_STATUS_SUCCESS[1]);
-  } catch (err) {
-    next(err);
-  }
+        // send response
+        res
+            .status(PccsStatus.PCCS_STATUS_SUCCESS[0])
+            .send(PccsStatus.PCCS_STATUS_SUCCESS[1]);
+    } catch (err) {
+        next(err);
+    }
 }

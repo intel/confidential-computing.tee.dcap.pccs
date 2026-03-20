@@ -33,66 +33,66 @@ import * as pcsCertificatesDao from '../../dao/pcsCertificatesDao.js';
 import * as enclaveIdentityDao from '../../dao/enclaveIdentityDao.js';
 import * as pckcrlDao from '../../dao/pckcrlDao.js';
 import * as CommonCacheLogic from './commonCacheLogic.js';
+import PccsError from '../../utils/PccsError.js';
+import PccsStatus from '../../constants/pccs_status_code.js';
 
 async function fetchWithFallback(daoMethod, pcsMethod, ...args) {
-  let result = await daoMethod(...args);
-  if (result == null) {
-    await pcsMethod(...args);
-  }
+    const result = await daoMethod(...args);
+    if (result === null) {
+        await pcsMethod(...args);
+    }
 }
 
 export async function checkQuoteVerificationCollateral(update) {
-  await fetchWithFallback(pckcrlDao.getPckCrl, CommonCacheLogic.getPckCrlFromPCS, Constants.CA_PROCESSOR);
-  await fetchWithFallback(pckcrlDao.getPckCrl, CommonCacheLogic.getPckCrlFromPCS, Constants.CA_PLATFORM);
+    await fetchWithFallback(pckcrlDao.getPckCrl, CommonCacheLogic.getPckCrlFromPCS, Constants.CA_PROCESSOR);
+    await fetchWithFallback(pckcrlDao.getPckCrl, CommonCacheLogic.getPckCrlFromPCS, Constants.CA_PLATFORM);
 
-  const pcsVersion = global.PCS_VERSION;
-  const identityTypes = [Constants.QE_IDENTITY_ID, Constants.QVE_IDENTITY_ID];
-  let updateTypes = [];
+    const pcsVersion = global.PCS_VERSION;
+    const identityTypes = [Constants.QE_IDENTITY_ID, Constants.QVE_IDENTITY_ID];
+    let updateTypes = [];
 
-  if (update === Constants.UPDATE_TYPE_STANDARD) {
-      updateTypes = [Constants.UPDATE_TYPE_STANDARD];
-  } else if (update === Constants.UPDATE_TYPE_EARLY) {
-      updateTypes = [Constants.UPDATE_TYPE_EARLY];
-  } else if (update === Constants.UPDATE_TYPE_ALL) {
-      updateTypes = [Constants.UPDATE_TYPE_EARLY, Constants.UPDATE_TYPE_STANDARD];
-  } else {
-    throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
-  }
-  // Fetching for both versions 3 and 4 if PCS_VERSION is 4
-  const versionsToFetch = pcsVersion === 4 ? [3, 4] : [pcsVersion];
-
-  for (const id of identityTypes) {
-    for (const version of versionsToFetch) {
-      for (const updateType of updateTypes) {
-        await fetchWithFallback(
-          enclaveIdentityDao.getEnclaveIdentity, 
-          CommonCacheLogic.getEnclaveIdentityFromPCS, 
-          id, 
-          version,
-          updateType
-        );
-      }
+    if (update === Constants.UPDATE_TYPE_STANDARD) {
+        updateTypes = [Constants.UPDATE_TYPE_STANDARD];
+    } else if (update === Constants.UPDATE_TYPE_EARLY) {
+        updateTypes = [Constants.UPDATE_TYPE_EARLY];
+    } else if (update === Constants.UPDATE_TYPE_ALL) {
+        updateTypes = [Constants.UPDATE_TYPE_EARLY, Constants.UPDATE_TYPE_STANDARD];
+    } else {
+        throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
     }
-  }
+    // Fetching for both versions 3 and 4 if PCS_VERSION is 4
+    const versionsToFetch = pcsVersion === 4 ? [3, 4] : [pcsVersion];
 
-  // Additional identity type to fetch if PCS_VERSION is 4
-  if (pcsVersion === 4) {
-    for (const updateType of updateTypes) {
-      await fetchWithFallback(
-        enclaveIdentityDao.getEnclaveIdentity, 
-        CommonCacheLogic.getEnclaveIdentityFromPCS, 
-        Constants.TDQE_IDENTITY_ID, 
-        4,
-        updateType
-      );
+    await Promise.all(identityTypes
+        .flatMap(id => versionsToFetch
+            .flatMap(version => updateTypes
+                .map(async updateType => await fetchWithFallback(
+                    enclaveIdentityDao.getEnclaveIdentity,
+                    CommonCacheLogic.getEnclaveIdentityFromPCS,
+                    id,
+                    version,
+                    updateType
+                ))
+            )
+        )
+    );
+
+    // Additional identity type to fetch if PCS_VERSION is 4
+    if (pcsVersion === 4) {
+        await Promise.all(updateTypes.map(async updateType => await fetchWithFallback(
+            enclaveIdentityDao.getEnclaveIdentity,
+            CommonCacheLogic.getEnclaveIdentityFromPCS,
+            Constants.TDQE_IDENTITY_ID,
+            4,
+            updateType
+        )));
     }
-  }
 
-  // Root CA crl
-  let rootca = await pcsCertificatesDao.getCertificateById(
-    Constants.PROCESSOR_ROOT_CERT_ID
-  );
-  if (rootca == null || rootca.crl == null) {
-    await CommonCacheLogic.getRootCACrlFromPCS(rootca);
-  }
+    // Root CA crl
+    const rootca = await pcsCertificatesDao.getCertificateById(
+        Constants.PROCESSOR_ROOT_CERT_ID
+    );
+    if (rootca === null || rootca.crl === null) {
+        await CommonCacheLogic.getRootCACrlFromPCS(rootca);
+    }
 }
