@@ -35,57 +35,62 @@ import { PckCert, sequelize } from './models/index.js';
 
 // Query a PCK Certificate
 export async function getCert(qe_id, cpu_svn, pce_svn, pce_id) {
-  const sql =
-    'select b.*,' +
-    ' (select cert from pcs_certificates e where e.id=d.root_cert_id) as root_cert,' +
-    ' (select cert from pcs_certificates e where e.id=d.intmd_cert_id) as intmd_cert' +
-    ' from platform_tcbs a, pck_cert b, platforms c left join pck_certchain d on c.ca=d.ca ' +
-    ' where a.qe_id=$qe_id and a.pce_id=$pce_id and a.cpu_svn=$cpu_svn and a.pce_svn=$pce_svn' +
-    ' and a.qe_id=b.qe_id and a.pce_id=b.pce_id and a.tcbm=b.tcbm' +
-    ' and a.qe_id=c.qe_id and a.pce_id=c.pce_id';
-  const pckcert = await sequelize.query(sql, {
-    type: sequelize.QueryTypes.SELECT,
-    bind: {
-      qe_id: qe_id,
-      pce_id: pce_id,
-      cpu_svn: cpu_svn,
-      pce_svn: pce_svn,
-    },
-  });
-  if (pckcert.length == 0) return null;
-  else if (pckcert.length == 1) {
-    if (pckcert[0].root_cert != null && pckcert[0].intmd_cert != null)
-      return pckcert[0];
-    else return null;
-  } else throw new PccsError(PccsStatus.PCCS_STATUS_INTERNAL_ERROR);
+    const sql =
+        'select b.*,' +
+        ' (select cert from pcs_certificates e where e.id=d.root_cert_id) as root_cert,' +
+        ' (select cert from pcs_certificates e where e.id=d.intmd_cert_id) as intmd_cert' +
+        ' from platform_tcbs a, pck_cert b, platforms c left join pck_certchain d on c.ca=d.ca ' +
+        ' where a.qe_id=$qe_id and a.pce_id=$pce_id and a.cpu_svn=$cpu_svn and a.pce_svn=$pce_svn' +
+        ' and a.qe_id=b.qe_id and a.pce_id=b.pce_id and a.tcbm=b.tcbm' +
+        ' and a.qe_id=c.qe_id and a.pce_id=c.pce_id';
+    const pckcert = await sequelize.query(sql, {
+        type: sequelize.QueryTypes.SELECT,
+        bind: {
+            qe_id,
+            pce_id,
+            cpu_svn,
+            pce_svn,
+        },
+    });
+    if (pckcert.length === 0) {
+        return null;
+    } else if (pckcert.length === 1) {
+        if (pckcert[0].root_cert !== null && pckcert[0].intmd_cert !== null) {
+            return pckcert[0];
+        } else {
+            return null;
+        }
+    } else {
+        throw new PccsError(PccsStatus.PCCS_STATUS_INTERNAL_ERROR);
+    }
 }
 
 // Query all PCK Certificates for certain platform
 export async function getCerts(qe_id, pce_id) {
-  return await PckCert.findAll({
-    where: {
-      qe_id: qe_id,
-      pce_id: pce_id,
-    },
-  });
+    return await PckCert.findAll({
+        where: {
+            qe_id,
+            pce_id,
+        },
+    });
 }
 
 // Update or insert a record
 export async function upsertPckCert(qe_id, pce_id, tcbm, cert) {
-  return await PckCert.upsert({
-    qe_id: qe_id,
-    pce_id: pce_id,
-    tcbm: tcbm,
-    pck_cert: cert,
-  });
+    return await PckCert.upsert({
+        qe_id,
+        pce_id,
+        tcbm,
+        pck_cert: cert,
+    });
 }
 
 // delete certs for a platform
 export async function deleteCerts(qe_id, pce_id) {
-  return await PckCert.destroy({
-    where: {
-      qe_id: qe_id,
-      pce_id: pce_id,
-    },
-  });
+    return await PckCert.destroy({
+        where: {
+            qe_id,
+            pce_id,
+        },
+    });
 }

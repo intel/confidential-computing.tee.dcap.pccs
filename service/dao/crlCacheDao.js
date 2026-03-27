@@ -33,21 +33,23 @@ import { CrlCache } from './models/index.js';
 
 // Query the CRL by primary key 'cdp_url'
 export async function getCrl(cdp_url) {
-  let crl_cache = await CrlCache.findByPk(cdp_url);
-  if (crl_cache) {
-    return crl_cache.crl;
-  } else return null;
+    const crlCache = await CrlCache.findByPk(cdp_url);
+    if (crlCache) {
+        return crlCache.crl;
+    } else {
+        return null;
+    }
 }
 
 // Update or insert a record
 export async function upsertCrl(cdp_url, crl) {
-  return await CrlCache.upsert({
-    cdp_url: cdp_url,
-    crl: crl,
-  });
+    return await CrlCache.upsert({
+        cdp_url,
+        crl,
+    });
 }
 
 // Get all cached CRLs
 export async function getAllCrls() {
-  return await CrlCache.findAll();
+    return await CrlCache.findAll();
 }

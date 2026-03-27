@@ -42,83 +42,79 @@ import { cachingModeManager } from './caching_modes/cachingModeManager.js';
 const ajv = new Ajv();
 
 async function checkPCKCertCacheStatus(regDataJson) {
-  let isCached = false;
-  do {
     const platform = await platformsDao.getPlatform(
-      regDataJson.qe_id,
-      regDataJson.pce_id
-    );
-    if (platform == null) {
-      break;
-    }
-    if (!Boolean(regDataJson.platform_manifest)) {
-      // * treat the absence of the PLATFORMMANIFEST in the API while
-      // there is a PLATFORM_MANIFEST in the cache as a 'match' *
-      regDataJson.platform_manifest = platform.platform_manifest;
-      let pckcert = await pckcertDao.getCert(
         regDataJson.qe_id,
-        regDataJson.cpu_svn,
-        regDataJson.pce_svn,
         regDataJson.pce_id
-      );
-      if (pckcert == null) {
-        break;
-      }
-    } else if (platform.platform_manifest != regDataJson.platform_manifest) {
-      // cached status is false
-      break;
+    );
+    if (platform === null) {
+        return false;
     }
-    isCached = true;
-  } while (false);
-
-  return isCached;
+    if (!regDataJson.platform_manifest) {
+        // * treat the absence of the PLATFORMMANIFEST in the API while
+        // there is a PLATFORM_MANIFEST in the cache as a 'match' *
+        regDataJson.platform_manifest = platform.platform_manifest;
+        const pckcert = await pckcertDao.getCert(
+            regDataJson.qe_id,
+            regDataJson.cpu_svn,
+            regDataJson.pce_svn,
+            regDataJson.pce_id
+        );
+        if (pckcert === null) {
+            return false;
+        }
+    } else if (platform.platform_manifest !== regDataJson.platform_manifest) {
+        // cached status is false
+        return false;
+    }
+    return true;
 }
 
 function normalizeRegData(regDataJson) {
-  // normalize the registration data
-  regDataJson.qe_id = regDataJson.qe_id.toUpperCase();
-  regDataJson.pce_id = regDataJson.pce_id.toUpperCase();
-  if (regDataJson.platform_manifest) {
-    // other parameters are useless
-    regDataJson.cpu_svn = '';
-    regDataJson.pce_svn = '';
-    regDataJson.enc_ppid = '';
-  } else {
-    if (!regDataJson.cpu_svn || !regDataJson.pce_svn || !regDataJson.enc_ppid)
-      throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
-    regDataJson.platform_manifest = '';
-    regDataJson.cpu_svn = regDataJson.cpu_svn.toUpperCase();
-    regDataJson.pce_svn = regDataJson.pce_svn.toUpperCase();
-  }
+    // normalize the registration data
+    regDataJson.qe_id = regDataJson.qe_id.toUpperCase();
+    regDataJson.pce_id = regDataJson.pce_id.toUpperCase();
+    if (regDataJson.platform_manifest) {
+        // other parameters are useless
+        regDataJson.cpu_svn = '';
+        regDataJson.pce_svn = '';
+        regDataJson.enc_ppid = '';
+    } else {
+        if (!regDataJson.cpu_svn || !regDataJson.pce_svn || !regDataJson.enc_ppid) {
+            throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
+        }
+        regDataJson.platform_manifest = '';
+        regDataJson.cpu_svn = regDataJson.cpu_svn.toUpperCase();
+        regDataJson.pce_svn = regDataJson.pce_svn.toUpperCase();
+    }
 }
 
 export async function registerPlatforms(regDataJson, update) {
-  //check parameters
-  let valid = ajv.validate(PLATFORM_REG_SCHEMA, regDataJson);
-  if (!valid) {
-    logger.error("Failed to validate the registration data.");
-    throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
-  }
+    //check parameters
+    const valid = ajv.validate(PLATFORM_REG_SCHEMA, regDataJson);
+    if (!valid) {
+        logger.error('Failed to validate the registration data.');
+        throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
+    }
 
-  // normalize registration data
-  normalizeRegData(regDataJson);
+    // normalize registration data
+    normalizeRegData(regDataJson);
 
-  // Get cache status
-  let isCached = await checkPCKCertCacheStatus(regDataJson);
+    // Get cache status
+    const isCached = await checkPCKCertCacheStatus(regDataJson);
 
-  await cachingModeManager.registerPlatforms(isCached, regDataJson, update);
+    await cachingModeManager.registerPlatforms(isCached, regDataJson, update);
 }
 
 export async function getRegisteredPlatforms() {
-  return await platformsRegDao.findRegisteredPlatforms(Constants.PLATF_REG_NEW);
+    return await platformsRegDao.findRegisteredPlatforms(Constants.PLATF_REG_NEW);
 }
 
 export async function getRegisteredNaPlatforms() {
-  return await platformsRegDao.findRegisteredPlatforms(
-    Constants.PLATF_REG_NOT_AVAILABLE
-  );
+    return await platformsRegDao.findRegisteredPlatforms(
+        Constants.PLATF_REG_NOT_AVAILABLE
+    );
 }
 
 export async function deleteRegisteredPlatforms(state) {
-  await platformsRegDao.deleteRegisteredPlatforms(state);
+    await platformsRegDao.deleteRegisteredPlatforms(state);
 }

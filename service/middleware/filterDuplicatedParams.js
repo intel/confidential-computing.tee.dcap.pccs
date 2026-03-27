@@ -30,16 +30,16 @@
  */
 
 export default function filterDuplicatedParams(req, res, next) {
-  const filteredQuery = {};
-  
-  Object.keys(req.query).forEach((key) => {
-      const value = req.query[key];
-      // If the value is an array, take the first element; otherwise, take the value as it is
-      filteredQuery[key] = Array.isArray(value) ? value[0] : value;
-  });
-  
-  // Replace the original req.query with the filtered query parameters
-  req.query = filteredQuery;
-  
-  next(); // Proceed to the next middleware or request handler
+    const filteredQuery = {};
+
+    Object.keys(req.query).forEach((key) => {
+        const value = req.query[key];
+        // If the value is an array, take the first element; otherwise, take the value as it is
+        filteredQuery[key] = Array.isArray(value) ? value[0] : value;
+    });
+
+    // Replace the original req.query with the filtered query parameters
+    req.query = filteredQuery;
+
+    next(); // Proceed to the next middleware or request handler
 }

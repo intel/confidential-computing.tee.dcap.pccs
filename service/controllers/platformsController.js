@@ -36,71 +36,68 @@ import Constants from '../constants/index.js';
 import logger from '../utils/Logger.js';
 
 export async function postPlatforms(req, res, next) {
-  try {
-    // validate request parameters
-    let update = req.query.update;
-    if (update) {
-      update = update.toUpperCase();
-      if (![Constants.UPDATE_TYPE_STANDARD, Constants.UPDATE_TYPE_EARLY, Constants.UPDATE_TYPE_ALL].includes(update)) {
-        logger.error("Invalid update type : " + update);
-        throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
-      }
-    }
-    else {
-      update = Constants.UPDATE_TYPE_STANDARD;
-    }
+    try {
+        // validate request parameters
+        let update = req.query.update;
+        if (update) {
+            update = update.toUpperCase();
+            if (![Constants.UPDATE_TYPE_STANDARD, Constants.UPDATE_TYPE_EARLY, Constants.UPDATE_TYPE_ALL].includes(update)) {
+                logger.error(`Invalid update type : ${update}`);
+                throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
+            }
+        } else {
+            update = Constants.UPDATE_TYPE_STANDARD;
+        }
 
-    // call registration service
-    await platformsRegService.registerPlatforms(req.body, update);
+        // call registration service
+        await platformsRegService.registerPlatforms(req.body, update);
 
-    // send response
-    res
-      .status(PccsStatus.PCCS_STATUS_SUCCESS[0])
-      .send(PccsStatus.PCCS_STATUS_SUCCESS[1]);
-  } catch (err) {
-    next(err);
-  }
+        // send response
+        res
+            .status(PccsStatus.PCCS_STATUS_SUCCESS[0])
+            .send(PccsStatus.PCCS_STATUS_SUCCESS[1]);
+    } catch (err) {
+        next(err);
+    }
 }
 
 export async function getPlatforms(req, res, next) {
-  const HTTP_HEADER_PLATFORM_COUNT = 'platform-count';
+    const HTTP_HEADER_PLATFORM_COUNT = 'platform-count';
 
-  try {
-    let platformsJson;
-    if (!req.query.source || req.query.source == 'reg') {
-      // call registration service to get registered platforms
-      platformsJson = await platformsRegService.getRegisteredPlatforms();
-      await platformsRegService.deleteRegisteredPlatforms(
-        Constants.PLATF_REG_NEW
-      );
-    } else if (req.query.source == 'reg_na') {
-      // call registration service to get registered 'Not available' platforms
-      platformsJson = await platformsRegService.getRegisteredNaPlatforms();
-      await platformsRegService.deleteRegisteredPlatforms(
-        Constants.PLATF_REG_NOT_AVAILABLE
-      );
-    } else {
-      let fmspc = req.query.source;
-      if (fmspc.length < 2 || fmspc[0] != '[' || fmspc[fmspc.length - 1] != ']') {
-        logger.error("Invalid fmspc : " + fmspc);
-        throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
-      }
-      fmspc = fmspc
-        .substring(1, fmspc.length - 1)
-        .trim()
-        .toUpperCase();
-      let fmspc_arr;
-      if (fmspc.length > 0) fmspc_arr = fmspc.split(',');
-      else fmspc_arr = [];
-      platformsJson = await platformsService.getCachedPlatforms(fmspc_arr);
+    try {
+        let platformsJson;
+        if (!req.query.source || req.query.source === 'reg') {
+            // call registration service to get registered platforms
+            platformsJson = await platformsRegService.getRegisteredPlatforms();
+            await platformsRegService.deleteRegisteredPlatforms(
+                Constants.PLATF_REG_NEW
+            );
+        } else if (req.query.source === 'reg_na') {
+            // call registration service to get registered 'Not available' platforms
+            platformsJson = await platformsRegService.getRegisteredNaPlatforms();
+            await platformsRegService.deleteRegisteredPlatforms(
+                Constants.PLATF_REG_NOT_AVAILABLE
+            );
+        } else {
+            let fmspc = req.query.source;
+            if (fmspc.length < 2 || fmspc[0] !== '[' || fmspc[fmspc.length - 1] !== ']') {
+                logger.error(`Invalid fmspc : ${fmspc}`);
+                throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
+            }
+            fmspc = fmspc
+                .substring(1, fmspc.length - 1)
+                .trim()
+                .toUpperCase();
+            const fmspc_arr = fmspc.length > 0 ? fmspc.split(',') : [];
+            platformsJson = await platformsService.getCachedPlatforms(fmspc_arr);
+        }
+
+        // send response
+        res
+            .status(PccsStatus.PCCS_STATUS_SUCCESS[0])
+            .header(HTTP_HEADER_PLATFORM_COUNT, platformsJson.length)
+            .send(platformsJson);
+    } catch (err) {
+        next(err);
     }
-
-    // send response
-    res
-      .status(PccsStatus.PCCS_STATUS_SUCCESS[0])
-      .header(HTTP_HEADER_PLATFORM_COUNT, platformsJson.length)
-      .send(platformsJson);
-  } catch (err) {
-    next(err);
-  }
 }

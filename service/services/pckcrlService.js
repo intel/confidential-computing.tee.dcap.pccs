@@ -33,20 +33,20 @@ import * as pckcrlDao from '../dao/pckcrlDao.js';
 import { cachingModeManager } from './caching_modes/cachingModeManager.js';
 
 export async function getPckCrl(ca, encoding) {
-  // query pck crl from local database first
-  const pckcrl = await pckcrlDao.getPckCrl(ca);
-  let result = {};
-  if (pckcrl == null) {
-    result = await cachingModeManager.getPckCrlFromPCS(ca);
-  } else {
-    result[Constants.SGX_PCK_CRL_ISSUER_CHAIN] =
+    // query pck crl from local database first
+    const pckcrl = await pckcrlDao.getPckCrl(ca);
+    let result = {};
+    if (pckcrl === null) {
+        result = await cachingModeManager.getPckCrlFromPCS(ca);
+    } else {
+        result[Constants.SGX_PCK_CRL_ISSUER_CHAIN] =
       pckcrl.intmd_cert + pckcrl.root_cert;
-    result['pckcrl'] = pckcrl.pck_crl;
-  }
+        result.pckcrl = pckcrl.pck_crl;
+    }
 
-  if (!encoding || encoding.toUpperCase() != 'DER') {
-    result['pckcrl'] = Buffer.from(result['pckcrl'], 'utf8').toString('hex');
-  }
+    if (!encoding || encoding.toUpperCase() !== 'DER') {
+        result.pckcrl = Buffer.from(result.pckcrl, 'utf8').toString('hex');
+    }
 
-  return result;
+    return result;
 }

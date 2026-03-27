@@ -31,24 +31,24 @@
 import Sequelize from 'sequelize';
 
 export default class FmspcTcbs extends Sequelize.Model {
-  static init(sequelize) {
-    super.init(
-      {
-        fmspc: { type: Sequelize.DataTypes.STRING, primaryKey: true },
-        type: { type: Sequelize.DataTypes.INTEGER, primaryKey: true },
-        version: { type: Sequelize.DataTypes.INTEGER, primaryKey: true },
-        update_type: { type: Sequelize.DataTypes.STRING, primaryKey: true },
-        tcbinfo: { type: Sequelize.DataTypes.BLOB },
-        root_cert_id: { type: Sequelize.DataTypes.INTEGER },
-        signing_cert_id: { type: Sequelize.DataTypes.INTEGER },
-      },
-      {
-        tableName: 'fmspc_tcbs',
-        timestamps: true,
-        createdAt: 'created_time',
-        updatedAt: 'updated_time',
-        sequelize,
-      }
-    );
-  }
+    static init(sequelize) {
+        super.init(
+            {
+                fmspc:           { type: Sequelize.DataTypes.STRING, primaryKey: true },
+                type:            { type: Sequelize.DataTypes.INTEGER, primaryKey: true },
+                version:         { type: Sequelize.DataTypes.INTEGER, primaryKey: true },
+                update_type:     { type: Sequelize.DataTypes.STRING, primaryKey: true },
+                tcbinfo:         { type: Sequelize.DataTypes.BLOB },
+                root_cert_id:    { type: Sequelize.DataTypes.INTEGER },
+                signing_cert_id: { type: Sequelize.DataTypes.INTEGER },
+            },
+            {
+                tableName:  'fmspc_tcbs',
+                timestamps: true,
+                createdAt:  'created_time',
+                updatedAt:  'updated_time',
+                sequelize,
+            }
+        );
+    }
 }

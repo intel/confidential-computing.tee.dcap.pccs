@@ -41,110 +41,113 @@ const HTTP_TIMEOUT = 120000; // 120 seconds
 const MAX_RETRY_COUNT = 6; // Max retry 6 times, approximate 64 seconds in total
 let HttpsAgent;
 if (Config.has('proxy') && Config.get('proxy')) {
-  // use proxy settings in config file
-  HttpsAgent = {
-    https: caw(Config.get('proxy'), { protocol: 'https' }),
-  };
+    // use proxy settings in config file
+    HttpsAgent = {
+        https: caw(Config.get('proxy'), { protocol: 'https' }),
+    };
 } else {
-  // use system proxy
-  HttpsAgent = {
-    https: caw({ protocol: 'https' }),
-  };
+    // use system proxy
+    HttpsAgent = {
+        https: caw({ protocol: 'https' }),
+    };
 }
 
-function is_early_access_portal(url) {
-  if (url.startsWith("https://validation.api.trustedservices.intel.com/"))
-    return true;
-  else
-    return false;
+function isEarlyAccessPortal(url) {
+    if (url.startsWith('https://validation.api.trustedservices.intel.com/')) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 export function parseAndModifyUrl(url) {
-  try {
-    let parsedUrl;
-    let queryString = '';
+    try {
+        let parsedUrl;
+        let queryString = '';
 
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-      try {
-        parsedUrl = new URL(url);
-        queryString = parsedUrl.search.slice(1);
-      } catch (error) {
-        return url;
-      }
-    } else {
-      const [path, query] = url.split('?', 2);
-      parsedUrl = {pathname: path, search: query ? '?' + query : ''};
-      queryString = query || '';
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+            try {
+                parsedUrl = new URL(url);
+                queryString = parsedUrl.search.slice(1);
+            } catch (error) {
+                logger.warn(`URL parsing error: ${error.message}`);
+                return url;
+            }
+        } else {
+            const [path, query] = url.split('?', 2);
+            parsedUrl = { pathname: path, search: query ? `?${query}` : '' };
+            queryString = query || '';
+        }
+        if (!queryString) {
+            return url;
+        }
+
+        const paramsArray = queryString.split('&');
+        const modifiedParamsArray = paramsArray.map(param => {
+            const [key, value] = param.split('=');
+            if (value && value.length > 50) {
+                const modifiedValue = `${value.slice(0, 4)}...${value.slice(-4)}`;
+                return `${key}=${modifiedValue}`;
+            }
+            return param;
+        });
+
+        const modifiedQueryString = modifiedParamsArray.join('&');
+        parsedUrl.search = `?${modifiedQueryString}`;
+        const modifiedUrl = parsedUrl.origin ? parsedUrl.origin + parsedUrl.pathname + parsedUrl.search : parsedUrl.pathname + parsedUrl.search;
+        return modifiedUrl;
+    } catch (error) {
+        logger.warn(`URL modifying error: ${error.message}`);
+        return null;
     }
-    if (!queryString) {
-      return url;
-    }
-
-    const paramsArray = queryString.split('&');
-    const modifiedParamsArray = paramsArray.map(param => {
-      const [key, value] = param.split('=');
-      if (value && value.length > 50) {
-        const modifiedValue = value.slice(0, 4) + '...' + value.slice(-4);
-        return `${key}=${modifiedValue}`;
-      }
-      return param;
-    });
-
-    const modifiedQueryString = modifiedParamsArray.join('&');
-    parsedUrl.search = '?' + modifiedQueryString;
-    const modifiedUrl = parsedUrl.origin ? parsedUrl.origin + parsedUrl.pathname + parsedUrl.search : parsedUrl.pathname + parsedUrl.search;
-    return modifiedUrl;
-  } catch (error) {
-    return null;
-  }
 }
 
-async function do_request(url, options) {
-  try {
-    // check for early access portal
-    if (is_early_access_portal(url)) {
-      if (!options.headers) {
-        options.headers = {};
-      }
-      options.headers['Ocp-Apim-Subscription-Key'] = Config.get('ApiKey');
-    }
-
-    // global opitons ( proxy, timeout, etc)
-    options.timeout = HTTP_TIMEOUT;
-    options.agent = HttpsAgent;
-    options.retry = {
-      limit: MAX_RETRY_COUNT,
-      methods: ['GET', 'PUT', 'HEAD', 'DELETE', 'OPTIONS', 'TRACE', 'POST'],
-    };
-    options.throwHttpErrors = false;
-
-    let response = await got(url, options);
-    let parsedUrl = parseAndModifyUrl(response.requestUrl);
-    const warning = response.headers['warning'] ? `[Warning=${response.headers['warning']}]` : '';
-    logger.info(`[Request-ID=${response.headers['request-id']}][URL=${parsedUrl}] -> [Status=${response.statusCode}]${warning}`);
-
-    logger.debug('Request URL ' + url);
-
-    if (response.statusCode != Constants.HTTP_SUCCESS) {
-      if (response.statusCode == 400) {
-        if (response.headers['error-code'] && response.headers['error-message']) {
-          logger.error('[Error-Code=' + response.headers['error-code'] + '][Error-Message=' + response.headers['error-message'] + ']');
+async function doRequest(url, options) {
+    try {
+        // check for early access portal
+        if (isEarlyAccessPortal(url)) {
+            if (!options.headers) {
+                options.headers = {};
+            }
+            options.headers['Ocp-Apim-Subscription-Key'] = Config.get('ApiKey');
         }
-      }
-    }
 
-    return response;
-  } catch (err) {
-    logger.error(err);  
-    if (err.response && err.response.headers) {
-      logger.info('Request-ID is : ' + err.response.headers['request-id']);
+        // global opitons ( proxy, timeout, etc)
+        options.timeout = HTTP_TIMEOUT;
+        options.agent = HttpsAgent;
+        options.retry = {
+            limit:   MAX_RETRY_COUNT,
+            methods: ['GET', 'PUT', 'HEAD', 'DELETE', 'OPTIONS', 'TRACE', 'POST'],
+        };
+        options.throwHttpErrors = false;
+
+        const response = await got(url, options);
+        const parsedUrl = parseAndModifyUrl(response.requestUrl);
+        const warning = response.headers.warning ? `[Warning=${response.headers.warning}]` : '';
+        logger.info(`[Request-ID=${response.headers['request-id']}][URL=${parsedUrl}] -> [Status=${response.statusCode}]${warning}`);
+
+        logger.debug(`Request URL ${url}`);
+
+        if (response.statusCode !== Constants.HTTP_SUCCESS) {
+            if (response.statusCode === 400) {
+                if (response.headers['error-code'] && response.headers['error-message']) {
+                    logger.error(`[Error-Code=${response.headers['error-code']}][Error-Message=${response.headers['error-message']}]`);
+                }
+            }
+        }
+
+        return response;
+    } catch (err) {
+        logger.error(err);
+        if (err.response && err.response.headers) {
+            logger.info(`Request-ID is : ${err.response.headers['request-id']}`);
+        }
+        throw new PccsError(PccsStatus.PCCS_STATUS_PCS_ACCESS_FAILURE);
     }
-    throw new PccsError(PccsStatus.PCCS_STATUS_PCS_ACCESS_FAILURE);
-  }
 }
 
 function getTdxUrl(url) {
-  return url.replace('/sgx/', '/tdx/');
+    return url.replace('/sgx/', '/tdx/');
 }
 
 /*
@@ -160,133 +163,133 @@ export async function getCert(enc_ppid, cpusvn, pcesvn, pceid) {
     headers: { 'Ocp-Apim-Subscription-Key': Config.get('ApiKey') },
   };
 
-  return do_request(Config.get('uri') + 'pckcert', options);
+  return doRequest(Config.get('uri') + 'pckcert', options);
 }
 */
 
-export async function getCerts(enc_ppid, pceid) {
-  const options = {
-    searchParams: {
-      encrypted_ppid: enc_ppid,
-      pceid: pceid,
-    },
-    method: 'GET',
-    headers: { 'Ocp-Apim-Subscription-Key': Config.get('ApiKey') },
-  };
+export async function getCerts(encPpid, pceid) {
+    const options = {
+        searchParams: {
+            encrypted_ppid: encPpid,
+            pceid,
+        },
+        method:  'GET',
+        headers: { 'Ocp-Apim-Subscription-Key': Config.get('ApiKey') },
+    };
 
-  return do_request(Config.get('uri') + 'pckcerts', options);
+    return doRequest(`${Config.get('uri')}pckcerts`, options);
 }
 
-export async function getCertsWithManifest(platform_manifest, pceid) {
-  const options = {
-    json: {
-      platformManifest: platform_manifest,
-      pceid: pceid,
-    },
-    method: 'POST',
-    headers: {
-      'Ocp-Apim-Subscription-Key': Config.get('ApiKey'),
-      'Content-Type': 'application/json',
-    },
-  };
+export async function getCertsWithManifest(platformManifest, pceid) {
+    const options = {
+        json: {
+            platformManifest,
+            pceid,
+        },
+        method:  'POST',
+        headers: {
+            'Ocp-Apim-Subscription-Key': Config.get('ApiKey'),
+            'Content-Type':              'application/json',
+        },
+    };
 
-  return do_request(Config.get('uri') + 'pckcerts', options);
+    return doRequest(`${Config.get('uri')}pckcerts`, options);
 }
 
 export async function getPckCrl(ca) {
-  const options = {
-    searchParams: {
-      ca: ca.toLowerCase(),
-      encoding: 'der',
-    },
-    method: 'GET',
-  };
+    const options = {
+        searchParams: {
+            ca:       ca.toLowerCase(),
+            encoding: 'der',
+        },
+        method: 'GET',
+    };
 
-  return do_request(Config.get('uri') + 'pckcrl', options);
+    return doRequest(`${Config.get('uri')}pckcrl`, options);
 }
 
-export async function getTcb(type, fmspc, version, update_type) {
-  if (type != Constants.PROD_TYPE_SGX && type != Constants.PROD_TYPE_TDX) {
-    throw new PccsError(PccsStatus.PCCS_STATUS_INTERNAL_ERROR);
-  }
+export async function getTcb(type, fmspc, version, updateType) {
+    if (type !== Constants.PROD_TYPE_SGX && type !== Constants.PROD_TYPE_TDX) {
+        throw new PccsError(PccsStatus.PCCS_STATUS_INTERNAL_ERROR);
+    }
 
-  if (update_type != Constants.UPDATE_TYPE_STANDARD && update_type != Constants.UPDATE_TYPE_EARLY) {
-    throw new PccsError(PccsStatus.PCCS_STATUS_INTERNAL_ERROR);
-  }
-  let update = update_type === Constants.UPDATE_TYPE_EARLY ? 'early' : 'standard';
+    if (updateType !== Constants.UPDATE_TYPE_STANDARD && updateType !== Constants.UPDATE_TYPE_EARLY) {
+        throw new PccsError(PccsStatus.PCCS_STATUS_INTERNAL_ERROR);
+    }
+    const update = updateType === Constants.UPDATE_TYPE_EARLY ? 'early' : 'standard';
 
-  const options = {
-    searchParams: {
-      fmspc: fmspc,
-      update: update
-    },
-    method: 'GET',
-  };
+    const options = {
+        searchParams: {
+            fmspc,
+            update
+        },
+        method: 'GET',
+    };
 
-  let uri = Config.get('uri') + 'tcb';
-  if (type == Constants.PROD_TYPE_TDX) {
-    uri = getTdxUrl(uri);
-  }
+    let uri = `${Config.get('uri')}tcb`;
+    if (type === Constants.PROD_TYPE_TDX) {
+        uri = getTdxUrl(uri);
+    }
 
-  if (global.PCS_VERSION == 4 && version == 3) {
-    // A little tricky here because we need to use the v3 PCS URL though v4 is configured
-    uri = uri.replace('/v4/', '/v3/');
-  }
+    if (global.PCS_VERSION === 4 && version === 3) {
+        // A little tricky here because we need to use the v3 PCS URL though v4 is configured
+        uri = uri.replace('/v4/', '/v3/');
+    }
 
-  return do_request(uri, options);
+    return doRequest(uri, options);
 }
 
-export async function getEnclaveIdentity(enclave_id, version, update_type) {
-  if (
-      enclave_id != Constants.QE_IDENTITY_ID &&
-      enclave_id != Constants.QVE_IDENTITY_ID &&
-      enclave_id != Constants.TDQE_IDENTITY_ID
-  ) {
-    throw new PccsError(PccsStatus.PCCS_STATUS_INTERNAL_ERROR);
-  }
-  if (update_type != Constants.UPDATE_TYPE_STANDARD && update_type != Constants.UPDATE_TYPE_EARLY) {
-    throw new PccsError(PccsStatus.PCCS_STATUS_INTERNAL_ERROR);
-  }
-  let update = update_type === Constants.UPDATE_TYPE_EARLY ? 'early' : 'standard';
+export async function getEnclaveIdentity(enclaveId, version, updateType) {
+    if (
+        enclaveId !== Constants.QE_IDENTITY_ID &&
+        enclaveId !== Constants.QVE_IDENTITY_ID &&
+        enclaveId !== Constants.TDQE_IDENTITY_ID
+    ) {
+        throw new PccsError(PccsStatus.PCCS_STATUS_INTERNAL_ERROR);
+    }
+    if (updateType !== Constants.UPDATE_TYPE_STANDARD && updateType !== Constants.UPDATE_TYPE_EARLY) {
+        throw new PccsError(PccsStatus.PCCS_STATUS_INTERNAL_ERROR);
+    }
+    const update = updateType === Constants.UPDATE_TYPE_EARLY ? 'early' : 'standard';
 
-  const options = {
-    searchParams: {
-      update: update
-    },
-    method: 'GET',
-  };
+    const options = {
+        searchParams: {
+            update
+        },
+        method: 'GET',
+    };
 
-  let uri = Config.get('uri') + 'qe/identity';
-  if (enclave_id == Constants.QVE_IDENTITY_ID) {
-    uri = Config.get('uri') + 'qve/identity';
-  } else if (enclave_id == Constants.TDQE_IDENTITY_ID) {
-    uri = getTdxUrl(uri);
-  }
+    let uri = `${Config.get('uri')}qe/identity`;
+    if (enclaveId === Constants.QVE_IDENTITY_ID) {
+        uri = `${Config.get('uri')}qve/identity`;
+    } else if (enclaveId === Constants.TDQE_IDENTITY_ID) {
+        uri = getTdxUrl(uri);
+    }
 
-  if (global.PCS_VERSION == 4 && version == 3) {
-    // A little tricky here because we need to use the v3 PCS URL though v4 is configured
-    uri = uri.replace('/v4/', '/v3/');
-  }
+    if (global.PCS_VERSION === 4 && version === 3) {
+        // A little tricky here because we need to use the v3 PCS URL though v4 is configured
+        uri = uri.replace('/v4/', '/v3/');
+    }
 
-  return do_request(uri, options);
+    return doRequest(uri, options);
 }
 
 export async function getFileFromUrl(uri) {
-  logger.debug(uri);
+    logger.debug(uri);
 
-  const options = {
-    agent: HttpsAgent,
-    timeout: HTTP_TIMEOUT,
-  };
+    const options = {
+        agent:   HttpsAgent,
+        timeout: HTTP_TIMEOUT,
+    };
 
-  try {
-    return await got(uri, options).buffer();
-  } catch (err) {
-    logger.error("Failed to download file for the given uri.")
-    throw err;
-  }
+    try {
+        return await got(uri, options).buffer();
+    } catch (err) {
+        logger.error('Failed to download file for the given uri.');
+        throw err;
+    }
 }
 
 export function getHeaderValue(headers, key) {
-  return headers[key.toLowerCase()];
+    return headers[key.toLowerCase()];
 }

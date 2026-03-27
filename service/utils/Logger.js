@@ -34,78 +34,75 @@ import winston from 'winston';
 import path from 'path';
 import clshooked from 'cls-hooked';
 import * as fs from 'fs';
-import { parseAndModifyUrl } from "../pcs_client/pcs_client.js";
+import { parseAndModifyUrl } from '../pcs_client/pcs_client.js';
 import { fileURLToPath } from 'url';
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const scriptDirname = path.dirname(fileURLToPath(import.meta.url));
 const { createLogger, format, transports } = winston;
 const { combine, timestamp, printf } = format;
 
-export const logger_namespace = clshooked.createNamespace('pccs-logger-namespace');
+export const loggerNamespace = clshooked.createNamespace('pccs-logger-namespace');
 
-export function formatLogMessage (tokens, req, res) {
-  const url = tokens.url(req, res);
-  const status = tokens.status(req, res);
-  return `[URL=${parseAndModifyUrl(url)}] -> [Status=${status}]`;
+export function formatLogMessage(tokens, req, res) {
+    const url = tokens.url(req, res);
+    const status = tokens.status(req, res);
+    return `[URL=${parseAndModifyUrl(url)}] -> [Status=${status}]`;
 }
 
 const options = {
-  file: {
-    level: Config.has('LogLevel') ? Config.get('LogLevel') : 'info',
-    filename: __dirname + `/../logs/pccs_server.log`,
-    handleExceptions: true,
-    json: false,
-    colorize: true,
-  },
-  console: {
-    level: Config.has('LogLevel') ? Config.get('LogLevel') : 'info',
-    handleExceptions: true,
-    json: false,
-    colorize: true,
-  },
+    file: {
+        level:            Config.has('LogLevel') ? Config.get('LogLevel') : 'info',
+        filename:         path.join(scriptDirname, '../logs/pccs_server.log'),
+        handleExceptions: true,
+        json:             false,
+        colorize:         true,
+    },
+    console: {
+        level:            Config.has('LogLevel') ? Config.get('LogLevel') : 'info',
+        handleExceptions: true,
+        json:             false,
+        colorize:         true,
+    },
 };
 
-
-
-let logger = createLogger({
-  format: combine(
-      timestamp({ format: 'YYYY-MM-DD HH:mm:ss.SSS' }),
-      printf((info) => {
-        const requestId = logger_namespace.get('clientRequestId');
-        if (!requestId) {
-          return `${info.timestamp} [${info.level}]: ${info.message}`;
-        }
-        else {
-          return `${info.timestamp} [${info.level}] [Client Request-ID=${requestId}] ${info.message}`;
-        }
-      })
-  ),
-  transports: [
-    new transports.File(options.file),
-    new transports.Console(options.console),
-  ],
-  exitOnError: false, // do not exit on handled exceptions
+const logger = createLogger({
+    format: combine(
+        timestamp({ format: 'YYYY-MM-DD HH:mm:ss.SSS' }),
+        printf((info) => {
+            const requestId = loggerNamespace.get('clientRequestId');
+            if (!requestId) {
+                return `${info.timestamp} [${info.level}]: ${info.message}`;
+            } else {
+                return `${info.timestamp} [${info.level}] [Client Request-ID=${requestId}] ${info.message}`;
+            }
+        })
+    ),
+    transports: [
+        new transports.File(options.file),
+        new transports.Console(options.console),
+    ],
+    exitOnError: false, // do not exit on handled exceptions
 });
 
 logger.stream = {
-  write: function (message, encoding) {
-    logger.info(message.trim());
-  },
+    write: message => {
+        logger.info(message.trim());
+    },
 };
 
-logger.on('finish', function() {
-  setTimeout(() => process.exit(1), 2000);
+logger.on('finish', () => {
+    setTimeout(() => process.exit(1), 2000);
 });
 
 logger.endAndExitProcess = () => {
-  logger.end();
+    logger.end();
 };
 
-process.on('uncaughtException', function (exception) {
-  logger.error(exception);
+process.on('uncaughtException', exception => {
+    logger.error(exception);
 });
 
 process.on('SIGINT', () => {
-  logger.endAndExitProcess();
+    logger.endAndExitProcess();
 });
 
 // Create ./logs if it doesn't exist
@@ -116,18 +113,18 @@ let stopped = false;
 
 // Create a proxy for the logger to check the stopped flag
 const loggerProxy = new Proxy(logger, {
-  get(target, property) {
-    if (property === 'endAndExitProcess') {
-      return () => {
-        stopped = true;
-        target.end();
-      };
+    get(target, property) {
+        if (property === 'endAndExitProcess') {
+            return () => {
+                stopped = true;
+                target.end();
+            };
+        }
+        if (stopped) {
+            return () => {}; // Return a no-op function if stopped
+        }
+        return target[property];
     }
-    if (stopped) {
-      return () => {}; // Return a no-op function if stopped
-    }
-    return target[property];
-  }
 });
 
 export default loggerProxy;

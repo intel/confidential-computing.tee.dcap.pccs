@@ -29,85 +29,85 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 class CachingModeManager {
-  constructor() {
-    this._mode = null;
-    if (this.instance) {
-      return this.instance;
+    constructor() {
+        this._mode = null;
+        if (this.instance) {
+            return this.instance;
+        }
+        this.instance = this;
     }
-    this.instance = this;
-  }
-  set cachingMode(mode) {
-    this._mode = mode;
-  }
-  get cachingMode() {
-    return this._mode;
-  }
+    set cachingMode(mode) {
+        this._mode = mode;
+    }
+    get cachingMode() {
+        return this._mode;
+    }
 
-  async getPckCertFromPCS(
-    qeid,
-    cpusvn,
-    pcesvn,
-    pceid,
-    enc_ppid,
-    platform_manifest
-  ) {
-    return this._mode.getPckCertFromPCS(
-      qeid,
-      cpusvn,
-      pcesvn,
-      pceid,
-      enc_ppid,
-      platform_manifest
-    );
-  }
+    async getPckCertFromPCS(
+        qeid,
+        cpusvn,
+        pcesvn,
+        pceid,
+        enc_ppid,
+        platform_manifest
+    ) {
+        return this._mode.getPckCertFromPCS(
+            qeid,
+            cpusvn,
+            pcesvn,
+            pceid,
+            enc_ppid,
+            platform_manifest
+        );
+    }
 
-  async getEnclaveIdentityFromPCS(enclave_id, version, update_type) {
-    return this._mode.getEnclaveIdentityFromPCS(enclave_id, version, update_type);
-  }
+    async getEnclaveIdentityFromPCS(enclave_id, version, update_type) {
+        return this._mode.getEnclaveIdentityFromPCS(enclave_id, version, update_type);
+    }
 
-  async getPckCrlFromPCS(ca) {
-    return this._mode.getPckCrlFromPCS(ca);
-  }
+    async getPckCrlFromPCS(ca) {
+        return this._mode.getPckCrlFromPCS(ca);
+    }
 
-  async getRootCACrlFromPCS(rootca) {
-    return this._mode.getRootCACrlFromPCS(rootca);
-  }
+    async getRootCACrlFromPCS(rootca) {
+        return this._mode.getRootCACrlFromPCS(rootca);
+    }
 
-  async getTcbInfoFromPCS(type, fmspc, version, update_type) {
-    return this._mode.getTcbInfoFromPCS(type, fmspc, version, update_type);
-  }
+    async getTcbInfoFromPCS(type, fmspc, version, update_type) {
+        return this._mode.getTcbInfoFromPCS(type, fmspc, version, update_type);
+    }
 
-  isRefreshable() {
-    return this._mode.isRefreshable();
-  }
+    isRefreshable() {
+        return this._mode.isRefreshable();
+    }
 
-  async registerPlatforms(isCached, regDataJson, update) {
-    return this._mode.registerPlatforms(isCached, regDataJson, update);
-  }
+    async registerPlatforms(isCached, regDataJson, update) {
+        return this._mode.registerPlatforms(isCached, regDataJson, update);
+    }
 
-  async processNotAvailableTcbs(
-    qeid,
-    pceid,
-    enc_ppid,
-    platform_manifest,
-    pckcerts_not_available
-  ) {
-    return this._mode.processNotAvailableTcbs(
-      qeid,
-      pceid,
-      enc_ppid,
-      platform_manifest,
-      pckcerts_not_available
-    );
-  }
+    async processNotAvailableTcbs(
+        qeid,
+        pceid,
+        enc_ppid,
+        platform_manifest,
+        pckcerts_not_available
+    ) {
+        return this._mode.processNotAvailableTcbs(
+            qeid,
+            pceid,
+            enc_ppid,
+            platform_manifest,
+            pckcerts_not_available
+        );
+    }
 
-  needUpdatePlatformTcbs(hasNotAvailableCerts) {
-    return this._mode.needUpdatePlatformTcbs(hasNotAvailableCerts);
-  }
+    needUpdatePlatformTcbs(hasNotAvailableCerts) {
+        return this._mode.needUpdatePlatformTcbs(hasNotAvailableCerts);
+    }
 
-  async getCrlFromPCS(uri) {
-    return this._mode.getCrlFromPCS(uri);
-  }
+    async getCrlFromPCS(uri) {
+        return this._mode.getCrlFromPCS(uri);
+    }
 }
 
 export const cachingModeManager = new CachingModeManager();

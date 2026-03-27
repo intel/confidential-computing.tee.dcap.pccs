@@ -25,7 +25,10 @@
   "devDependencies": {
     "chai": "^6.2.1",
     "mocha": "^11.7.5",
-    "sinon": "^21.0.0"
+    "sinon": "^21.0.0",
+    "eslint": "^9.39.2",
+    "eslint-plugin-chai-friendly": "^1.1.0",
+    "eslint-plugin-n": "^17.23.2"
   },
   "engines": {
     "node": ">= 18.17.0"
@@ -33,12 +36,23 @@
   "overrides": {
     "tar": "^7.5.12",
     "diff": "^8.0.3",
+    "umzug": {
+      "@rushstack/ts-command-line": {
+        "@rushstack/terminal": {
+          "@rushstack/node-core-library": {
+            "ajv": "^8.18.0"
+          }
+        }
+      }
+    },
     "ajv": "^8.18.0",
     "minimatch": "^10.2.4",
     "@tootallnate/once": "^3.0.1"
   },
   "scripts": {
     "start": "cross-env NODE_ENV=production node pccs_server.js",
-    "test": "mocha"
+    "test": "mocha",
+    "eslint": "eslint",
+    "eslintFix": "eslint --fix"
   }
 }

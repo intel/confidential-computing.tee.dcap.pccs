@@ -46,305 +46,289 @@ import * as pcsClient from '../pcs_client/pcs_client.js';
 import * as appUtil from '../utils/apputil.js';
 import { sequelize } from '../dao/models/index.js';
 import { cachingModeManager } from './caching_modes/cachingModeManager.js';
-import { selectBestPckCert } from "../pckCertSelection/pckCertSelection.js";
+import { selectBestPckCert } from '../pckCertSelection/pckCertSelection.js';
 
 // Refresh the enclave_identities table
-async function refresh_enclave_identities() {
-  let enclave_id_list;
-  if (global.PCS_VERSION == 3) {
-    enclave_id_list = [
-      [Constants.QE_IDENTITY_ID, 3],
-      [Constants.QVE_IDENTITY_ID, 3],
-    ];
-  } else if (global.PCS_VERSION == 4) {
-    enclave_id_list = [
-      [Constants.QE_IDENTITY_ID, 3],
-      [Constants.QVE_IDENTITY_ID, 3],
-      [Constants.QE_IDENTITY_ID, 4],
-      [Constants.QVE_IDENTITY_ID, 4],
-      [Constants.TDQE_IDENTITY_ID, 4],
-    ];
-  }
-  let issuer_chain_updated = false;  // Update issuer chain only once
-  for (const enclave_id of enclave_id_list) {
-    for (const update_type of [Constants.UPDATE_TYPE_STANDARD, Constants.UPDATE_TYPE_EARLY]) {
-      const pck_server_res = await pcsClient.getEnclaveIdentity(
-        enclave_id[0],
-        enclave_id[1],
-        update_type
-      );
-      if (pck_server_res.statusCode == Constants.HTTP_SUCCESS) {
-        // Then refresh cache DB
-        await enclaveIdentityDao.upsertEnclaveIdentity(
-          enclave_id[0],
-          pck_server_res.rawBody,
-          enclave_id[1],
-          update_type
-        );
-        if (!issuer_chain_updated) {
-          await pcsCertificatesDao.upsertEnclaveIdentityIssuerChain(
-            pcsClient.getHeaderValue(
-              pck_server_res.headers,
-              Constants.SGX_ENCLAVE_IDENTITY_ISSUER_CHAIN
-            )
-          );
-          issuer_chain_updated = true;
-        }
-      } else {
-        // Let it continue even though the collateral doesn't exist
-        logger.debug("Couldn't get enclave identity for (id:%d,version:%d,type:%s)", enclave_id[0], enclave_id[1], update_type);
-      }  
+async function refreshEnclaveIdentities() {
+    let enclaveIdList;
+    if (global.PCS_VERSION === 3) {
+        enclaveIdList = [
+            [Constants.QE_IDENTITY_ID, 3],
+            [Constants.QVE_IDENTITY_ID, 3],
+        ];
+    } else if (global.PCS_VERSION === 4) {
+        enclaveIdList = [
+            [Constants.QE_IDENTITY_ID, 3],
+            [Constants.QVE_IDENTITY_ID, 3],
+            [Constants.QE_IDENTITY_ID, 4],
+            [Constants.QVE_IDENTITY_ID, 4],
+            [Constants.TDQE_IDENTITY_ID, 4],
+        ];
     }
-  }
-}
-
-function sorter(key1, key2) {
-  return function (a, b) {
-    if (a[key1] > b[key1]) return -1;
-    else if (a[key1] < b[key1]) return 1;
-    else {
-      if (a[key2] > b[key2]) return 1;
-      else if (a[key2] < b[key2]) return -1;
-      else return 0;
+    const updateTypes = [Constants.UPDATE_TYPE_STANDARD, Constants.UPDATE_TYPE_EARLY];
+    const pckServerResponses = await Promise.all(enclaveIdList
+        .flatMap(enclaveId => updateTypes.map(updateType => [enclaveId, updateType]))
+        .map(async([enclaveId, updateType]) => {
+            const pckServerRes = await pcsClient.getEnclaveIdentity(
+                enclaveId[0],
+                enclaveId[1],
+                updateType
+            );
+            if (pckServerRes.statusCode === Constants.HTTP_SUCCESS) {
+                // Then refresh cache DB
+                await enclaveIdentityDao.upsertEnclaveIdentity(
+                    enclaveId[0],
+                    pckServerRes.rawBody,
+                    enclaveId[1],
+                    updateType
+                );
+            } else {
+                // Let it continue even though the collateral doesn't exist
+                logger.debug("Couldn't get enclave identity for (id:%d,version:%d,type:%s)", enclaveId[0], enclaveId[1], updateType);
+            }
+            return pckServerRes;
+        })
+    );
+    const somePositivePckServerResponse = pckServerResponses.find(pckServerRes => pckServerRes.statusCode === Constants.HTTP_SUCCESS);
+    if (somePositivePckServerResponse === undefined) {
+        return;
     }
-  };
+    await pcsCertificatesDao.upsertEnclaveIdentityIssuerChain(
+        pcsClient.getHeaderValue(
+            somePositivePckServerResponse.headers,
+            Constants.SGX_ENCLAVE_IDENTITY_ISSUER_CHAIN
+        )
+    );
 }
 
 // Refresh all PCK certs in the database
-async function refresh_all_pckcerts(fmspc_array) {
-  const platformTcbs = await platformTcbsDao.getPlatformTcbs(fmspc_array);
-  platformTcbs.sort(sorter('qe_id', 'pce_id'));
-  let last_qe_id = '';
-  let last_pce_id = '';
-  let pckcerts;
-  let tcbInfoObj;
-  let pck_certchain = null;
-  let fmspc;
-  let ca_type;
-  for (const platformTcb of platformTcbs) {
-    if (platformTcb.qe_id != last_qe_id || platformTcb.pce_id != last_pce_id) {
-      // new platform detected
-      const platform = await platformsDao.getPlatform(
-        platformTcb.qe_id,
-        platformTcb.pce_id
-      );
-      // contact Intel PCS server to get PCK certs
-      let pck_server_res;
-      if (platform.platform_manifest) {
-        pck_server_res = await pcsClient.getCertsWithManifest(
-          platform.platform_manifest,
-          platformTcb.pce_id
+async function refreshAllPckcerts(fmspcArray) {
+    const platformTcbs = await platformTcbsDao.getPlatformTcbs(fmspcArray);
+
+    const platformTcbsGrouped = platformTcbs.reduce((acc, tcb) => { //TODO: replace with Object.groupBy when we support Node 21+
+        const key = `${tcb.qe_id}_${tcb.pce_id}`;
+        if (!acc[key]) {
+            acc[key] = [];
+        }
+        acc[key].push(tcb);
+        return acc;
+    }, {});
+    await Promise.all(Object.entries(platformTcbsGrouped).map(async kv => {
+        const platformTcbs = kv[1];
+        const qeId = platformTcbs[0].qe_id;
+        const pceId = platformTcbs[0].pce_id;
+
+        // new platform detected
+        const platform = await platformsDao.getPlatform(
+            qeId,
+            pceId
         );
-      } else {
-        pck_server_res = await pcsClient.getCerts(
-          platform.enc_ppid,
-          platformTcb.pce_id
+        // contact Intel PCS server to get PCK certs
+        const pckServerCertsRes = platform.platform_manifest ?
+            await pcsClient.getCertsWithManifest(
+                platform.platform_manifest,
+                pceId
+            ) :
+            await pcsClient.getCerts(
+                platform.enc_ppid,
+                pceId
+            );
+
+        // check HTTP status
+        if (pckServerCertsRes.statusCode !== Constants.HTTP_SUCCESS) {
+            throw new PccsError(PccsStatus.PCCS_STATUS_NO_CACHE_DATA);
+        }
+
+        const pckCertChain = pcsClient.getHeaderValue(
+            pckServerCertsRes.headers,
+            Constants.SGX_PCK_CERTIFICATE_ISSUER_CHAIN
         );
-      }
 
-      // check HTTP status
-      if (pck_server_res.statusCode != Constants.HTTP_SUCCESS) {
-        throw new PccsError(PccsStatus.PCCS_STATUS_NO_CACHE_DATA);
-      }
+        // Parse the response body
+        const pckcerts = JSON.parse(pckServerCertsRes.body);
+        if (pckcerts.length === 0) {
+            logger.error("The response body doesn't include PCK certificates.");
+            throw new PccsError(PccsStatus.PCCS_STATUS_NO_CACHE_DATA);
+        }
 
-      pck_certchain = pcsClient.getHeaderValue(
-        pck_server_res.headers,
-        Constants.SGX_PCK_CERTIFICATE_ISSUER_CHAIN
-      );
+        // Get fmspc and ca type from response header
+        const fmspc = pcsClient
+            .getHeaderValue(pckServerCertsRes.headers, Constants.SGX_FMSPC)
+            .toUpperCase();
+        const caType = pcsClient
+            .getHeaderValue(
+                pckServerCertsRes.headers,
+                Constants.SGX_PCK_CERTIFICATE_CA_TYPE
+            )
+            .toUpperCase();
 
-      // Parse the response body
-      pckcerts = JSON.parse(pck_server_res.body);
-      if (pckcerts.length == 0) {
-        logger.error("The response body doesn't include PCK certificates.");
-        throw new PccsError(PccsStatus.PCCS_STATUS_NO_CACHE_DATA);
-      }
+        if (fmspc === null || caType === null) {
+            logger.error("The response header doesn't include fmspc or ca.");
+            throw new PccsError(PccsStatus.PCCS_STATUS_INTERNAL_ERROR);
+        }
 
-      // Get fmspc and ca type from response header
-      fmspc = pcsClient
-        .getHeaderValue(pck_server_res.headers, Constants.SGX_FMSPC)
-        .toUpperCase();
-      ca_type = pcsClient
-        .getHeaderValue(
-          pck_server_res.headers,
-          Constants.SGX_PCK_CERTIFICATE_CA_TYPE
-        )
-        .toUpperCase();
+        // get tcbinfo for this fmspc
 
-      if (fmspc == null || ca_type == null) {
-        logger.error("The response header doesn't include fmspc or ca.");
-        throw new PccsError(PccsStatus.PCCS_STATUS_INTERNAL_ERROR);
-      }
+        const pckServerTcbRes = await pcsClient.getTcb(Constants.PROD_TYPE_SGX, fmspc, global.PCS_VERSION, Constants.UPDATE_TYPE_EARLY);
+        if (pckServerTcbRes.statusCode !== Constants.HTTP_SUCCESS) {
+            throw new PccsError(PccsStatus.PCCS_STATUS_NO_CACHE_DATA);
+        }
+        const tcbInfoObj = JSON.parse(pckServerTcbRes.body).tcbInfo;
 
-      // get tcbinfo for this fmspc
+        // flush and add PCK certs
+        await pckcertDao.deleteCerts(qeId, pceId);
+        await Promise.all(pckcerts.map(async pckcert => await pckcertDao.upsertPckCert(
+            qeId,
+            pceId,
+            pckcert.tcbm,
+            decodeURIComponent(pckcert.cert)
+        )));
 
-      pck_server_res = await pcsClient.getTcb(Constants.PROD_TYPE_SGX, fmspc, global.PCS_VERSION, Constants.UPDATE_TYPE_EARLY);
-      if (pck_server_res.statusCode != Constants.HTTP_SUCCESS) {
-        throw new PccsError(PccsStatus.PCCS_STATUS_NO_CACHE_DATA);
-      }
-      tcbInfoObj = JSON.parse(pck_server_res.body).tcbInfo;
+        await Promise.all(platformTcbs.map(async platformTcb => {
+            // unescape certificates
+            const decodedCerts = pckcerts.map(cert => ({
+                tcbm:     cert.tcbm.toUpperCase(),
+                pck_cert: decodeURIComponent(cert.cert)
+            }));
 
-      // flush and add PCK certs
-      await pckcertDao.deleteCerts(platformTcb.qe_id, platformTcb.pce_id);
-      for (const pckcert of pckcerts) {
-        await pckcertDao.upsertPckCert(
-          platformTcb.qe_id,
-          platformTcb.pce_id,
-          pckcert.tcbm,
-          decodeURIComponent(pckcert.cert)
-        );
-      }
-    }
+            // get the best cert
+            let selectedPckCert;
+            try {
+                selectedPckCert = selectBestPckCert(platformTcb.cpu_svn, platformTcb.pce_svn, platformTcb.pce_id, decodedCerts, tcbInfoObj);
+            } catch {
+                throw new PccsError(PccsStatus.PCCS_STATUS_NO_CACHE_DATA);
+            }
 
-    // unescape certificates
-    const decodedCerts = pckcerts.map(cert => ({
-      tcbm: cert.tcbm.toUpperCase(),
-      pck_cert: decodeURIComponent(cert.cert)
+            await platformTcbsDao.upsertPlatformTcbs(
+                platformTcb.qe_id,
+                platformTcb.pce_id,
+                platformTcb.cpu_svn,
+                platformTcb.pce_svn,
+                selectedPckCert.tcbm
+            );
+        }));
+
+        if (pckCertChain) {
+            // Update pckCertChain
+            await pckCertchainDao.upsertPckCertchain(caType);
+            // Update or insert SGX_PCK_CERTIFICATE_ISSUER_CHAIN
+            await pcsCertificatesDao.upsertPckCertificateIssuerChain(
+                caType,
+                pckCertChain
+            );
+        }
     }));
-
-    // get the best cert
-    let selectedPckCert;
-    try {
-      selectedPckCert = selectBestPckCert(platformTcb.cpu_svn, platformTcb.pce_svn, platformTcb.pce_id, decodedCerts, tcbInfoObj);
-    } catch (err) {
-      throw new PccsError(PccsStatus.PCCS_STATUS_NO_CACHE_DATA);
-    }
-
-    await platformTcbsDao.upsertPlatformTcbs(
-      platformTcb.qe_id,
-      platformTcb.pce_id,
-      platformTcb.cpu_svn,
-      platformTcb.pce_svn,
-      selectedPckCert.tcbm
-    );
-
-    if (pck_certchain) {
-      // Update pck_certchain
-      await pckCertchainDao.upsertPckCertchain(ca_type);
-      // Update or insert SGX_PCK_CERTIFICATE_ISSUER_CHAIN
-      await pcsCertificatesDao.upsertPckCertificateIssuerChain(
-        ca_type,
-        pck_certchain
-      );
-    }
-
-    last_qe_id = platformTcb.qe_id;
-    last_pce_id = platformTcb.pce_id;
-  }
 }
 
 // Refresh the crl record for the specified ca
-async function refresh_one_crl(ca) {
-  const pck_server_res = await pcsClient.getPckCrl(ca);
-  if (pck_server_res.statusCode == Constants.HTTP_SUCCESS) {
-    // Then refresh cache DB
-    await pckcrlDao.upsertPckCrl(ca, pck_server_res.rawBody);
-    await pcsCertificatesDao.upsertPckCrlCertchain(
-      ca,
-      pcsClient.getHeaderValue(
-        pck_server_res.headers,
-        Constants.SGX_PCK_CRL_ISSUER_CHAIN
-      )
-    );
-  } else {
-    throw new PccsError(PccsStatus.PCCS_STATUS_SERVICE_UNAVAILABLE);
-  }
+async function refreshOneCrl(ca) {
+    const pckServerRes = await pcsClient.getPckCrl(ca);
+    if (pckServerRes.statusCode === Constants.HTTP_SUCCESS) {
+        // Then refresh cache DB
+        await pckcrlDao.upsertPckCrl(ca, pckServerRes.rawBody);
+        await pcsCertificatesDao.upsertPckCrlCertchain(
+            ca,
+            pcsClient.getHeaderValue(
+                pckServerRes.headers,
+                Constants.SGX_PCK_CRL_ISSUER_CHAIN
+            )
+        );
+    } else {
+        throw new PccsError(PccsStatus.PCCS_STATUS_SERVICE_UNAVAILABLE);
+    }
 }
 
 // Refresh all PCK CRLs
-async function refresh_pck_crls() {
-  const pckcrls = await pckcrlDao.getAllPckCrls();
-  for (let pckcrl of pckcrls) {
-    // refresh each crl
-    await refresh_one_crl(pckcrl.ca);
-  }
+async function refreshPckCrls() {
+    const pckcrls = await pckcrlDao.getAllPckCrls();
+    await Promise.all(pckcrls.map(async pckcrl => await refreshOneCrl(pckcrl.ca)));
 }
 
 // Refresh root CA CRL
-async function refresh_rootca_crl() {
-  let rootca = await pcsCertificatesDao.getCertificateById(
-    Constants.PROCESSOR_ROOT_CERT_ID
-  );
-  if (!rootca) throw new PccsError(PccsStatus.PCCS_STATUS_INTERNAL_ERROR);
+async function refreshRootcaCrl() {
+    const rootca = await pcsCertificatesDao.getCertificateById(
+        Constants.PROCESSOR_ROOT_CERT_ID
+    );
+    if (!rootca) {
+        throw new PccsError(PccsStatus.PCCS_STATUS_INTERNAL_ERROR);
+    }
 
-  const x509 = new X509();
-  if (!x509.parseCert(decodeURIComponent(rootca.cert)) || !x509.cdp_uri) {
-    logger.error("Invalid PCS certificate.")
-    throw new PccsError(PccsStatus.PCCS_STATUS_INTERNAL_ERROR);
-  }
+    const x509 = new X509();
+    if (!x509.parseCert(decodeURIComponent(rootca.cert)) || !x509.cdpUri) {
+        logger.error('Invalid PCS certificate.');
+        throw new PccsError(PccsStatus.PCCS_STATUS_INTERNAL_ERROR);
+    }
 
-  rootca.crl = await pcsClient.getFileFromUrl(x509.cdp_uri);
+    rootca.crl = await pcsClient.getFileFromUrl(x509.cdpUri);
 
-  await pcsCertificatesDao.upsertPcsCertificates({
-    id: rootca.id,
-    crl: rootca.crl,
-  });
+    await pcsCertificatesDao.upsertPcsCertificates({
+        id:  rootca.id,
+        crl: rootca.crl,
+    });
 }
 
 // Refresh crl_cache table
-async function refresh_cached_crls() {
-  const crl_caches = await crlCacheDao.getAllCrls();
-  for (let crl_cache of crl_caches) {
-    // refresh each crl
-    const crl = await pcsClient.getFileFromUrl(crl_cache.cdp_url);
-    await crlCacheDao.upsertCrl(crl_cache.cdp_url, crl);
-  }
+async function refreshCachedCrls() {
+    const crlCaches = await crlCacheDao.getAllCrls();
+    await Promise.all(crlCaches.map(async crlCache => {
+        // refresh each crl
+        const crl = await pcsClient.getFileFromUrl(crlCache.cdp_url);
+        return await crlCacheDao.upsertCrl(crlCache.cdp_url, crl);
+    }));
 }
 
 // Refresh the TCB info for the specified fmspc value
-async function refresh_one_tcb(fmspc, type, version, update_type) {
-  const pck_server_res = await pcsClient.getTcb(type, fmspc, version, update_type);
-  if (pck_server_res.statusCode == Constants.HTTP_SUCCESS) {
-    // Then refresh cache DB
-    await fmspcTcbDao.upsertFmspcTcb({
-      type: type,
-      fmspc: fmspc,
-      version: version,
-      update_type: update_type,
-      tcbinfo: pck_server_res.rawBody,
-    });
-    // update or insert certificate chain
-    await pcsCertificatesDao.upsertTcbInfoIssuerChain(
-      pcsClient.getHeaderValue(
-        pck_server_res.headers,
-        appUtil.getTcbInfoIssuerChainName(version)
-      )
-    );
-  } else {
-    logger.error("Failed to get tcbinfo for fmspc:" + fmspc)
-    throw new PccsError(PccsStatus.PCCS_STATUS_SERVICE_UNAVAILABLE);
-  }
+async function refreshOneTcb(fmspc, type, version, updateType) {
+    const pckServerRes = await pcsClient.getTcb(type, fmspc, version, updateType);
+    if (pckServerRes.statusCode === Constants.HTTP_SUCCESS) {
+        // Then refresh cache DB
+        await fmspcTcbDao.upsertFmspcTcb({
+            type,
+            fmspc,
+            version,
+            update_type: updateType,
+            tcbinfo:     pckServerRes.rawBody,
+        });
+        // update or insert certificate chain
+        await pcsCertificatesDao.upsertTcbInfoIssuerChain(
+            pcsClient.getHeaderValue(
+                pckServerRes.headers,
+                appUtil.getTcbInfoIssuerChainName(version)
+            )
+        );
+    } else {
+        logger.error(`Failed to get tcbinfo for fmspc:${fmspc}`);
+        throw new PccsError(PccsStatus.PCCS_STATUS_SERVICE_UNAVAILABLE);
+    }
 }
 
 // Refresh all TCBs in the table
-async function refresh_all_tcbs() {
-  // hotfix : delete type==null records
-  await fmspcTcbDao.deleteInvalidTcbs();
+async function refreshAllTcbs() {
+    // hotfix : delete type==null records
+    await fmspcTcbDao.deleteInvalidTcbs();
 
-  const tcbs = await fmspcTcbDao.getAllTcbs();
-  for (let tcb of tcbs) {
-    // refresh each tcb
-    await refresh_one_tcb(tcb.fmspc, tcb.type, tcb.version, tcb.update_type);
-  }
+    const tcbs = await fmspcTcbDao.getAllTcbs();
+    await Promise.all(tcbs.map(async tcb => refreshOneTcb(tcb.fmspc, tcb.type, tcb.version, tcb.update_type)));
 }
 
 export async function refreshCache(type, fmspc) {
-  if (!cachingModeManager.isRefreshable()) {
-    throw new PccsError(PccsStatus.PCCS_STATUS_SERVICE_UNAVAILABLE);
-  }
+    if (!cachingModeManager.isRefreshable()) {
+        throw new PccsError(PccsStatus.PCCS_STATUS_SERVICE_UNAVAILABLE);
+    }
 
-  if (type == 'certs') {
-    await sequelize.transaction(async (t) => {
-      await refresh_all_pckcerts(fmspc);
-    });
-  } else {
-    await sequelize.transaction(async (t) => {
-      await refresh_pck_crls();
-      await refresh_all_tcbs();
-      await refresh_enclave_identities();
-      await refresh_rootca_crl();
-      await refresh_cached_crls();
-    });
-  }
+    if (type === 'certs') {
+        await sequelize.transaction(async() => {
+            await refreshAllPckcerts(fmspc);
+        });
+    } else {
+        await sequelize.transaction(async() => {
+            await refreshPckCrls();
+            await refreshAllTcbs();
+            await refreshEnclaveIdentities();
+            await refreshRootcaCrl();
+            await refreshCachedCrls();
+        });
+    }
 }
 
 // Schedule the refresh job in cron-style
@@ -360,19 +344,21 @@ export async function refreshCache(type, fmspc) {
 //
 
 export async function scheduledRefresh() {
-  try {
-    if (!cachingModeManager.isRefreshable()) return;
+    try {
+        if (!cachingModeManager.isRefreshable()) {
+            return;
+        }
 
-    await sequelize.transaction(async (t) => {
-      await refresh_pck_crls();
-      await refresh_all_tcbs();
-      await refresh_enclave_identities();
-      await refresh_rootca_crl();
-      await refresh_cached_crls();
-    });
+        await sequelize.transaction(async() => {
+            await refreshPckCrls();
+            await refreshAllTcbs();
+            await refreshEnclaveIdentities();
+            await refreshRootcaCrl();
+            await refreshCachedCrls();
+        });
 
-    logger.info('Scheduled cache refresh is completed successfully.');
-  } catch (error) {
-    logger.error('Scheduled cache refresh failed.');
-  }
+        logger.info('Scheduled cache refresh is completed successfully.');
+    } catch {
+        logger.error('Scheduled cache refresh failed.');
+    }
 }

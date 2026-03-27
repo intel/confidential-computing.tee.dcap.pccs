@@ -48,144 +48,144 @@ import * as refreshService from './services/refreshService.js';
 import * as appUtil from './utils/apputil.js';
 import { cachingModeManager } from './services/caching_modes/cachingModeManager.js';
 import {
-  LazyCachingMode,
-  ReqCachingMode,
-  OfflineCachingMode,
+    LazyCachingMode,
+    ReqCachingMode,
+    OfflineCachingMode,
 } from './services/caching_modes/cachingMode.js';
 
 
 const app = express();
 
 async function initializeApp() {
-  global.PCS_VERSION = appUtil.get_api_version_from_url(Config.get('uri'));
+    global.PCS_VERSION = appUtil.getApiVersionFromUrl(Config.get('uri'));
 
-  if (Config.has('OPENSSL_FIPS_MODE') && Config.get('OPENSSL_FIPS_MODE')) {
-    const crypto = await import('node:crypto');
-    crypto.setFips(true);
-  }
+    if (Config.has('OPENSSL_FIPS_MODE') && Config.get('OPENSSL_FIPS_MODE')) {
+        const crypto = await import('node:crypto');
+        crypto.setFips(true);
+    }
 
-  if (!appUtil.startup_check()) {
-    logger.endAndExitProcess();
-  }
+    if (!appUtil.startupCheck()) {
+        logger.endAndExitProcess();
+    }
 
-  const db_init_ok = await appUtil.database_check();
-  if (!db_init_ok) {
-    logger.endAndExitProcess();
-  }
+    const db_init_ok = await appUtil.databaseCheck();
+    if (!db_init_ok) {
+        logger.endAndExitProcess();
+    }
 
-  if (Config.get('DB_CONFIG') === 'sqlite') {
-    fs.chmod(Config.get('sqlite').options.storage, 0o640, () => {});
-  }
+    if (Config.get('DB_CONFIG') === 'sqlite') {
+        fs.chmod(Config.get('sqlite').options.storage, 0o640, () => {});
+    }
 }
 
 function configureMiddlewareAndRoutes() {
-  app.use(morgan(formatLogMessage, { stream: logger.stream }));
-  app.use(addRequestId);
-  app.use(filterDuplicatedParams);
-  app.use(body_parser.urlencoded({ extended: true }));
-  app.use(body_parser.json({ limit: '200000kb' }));
+    app.use(morgan(formatLogMessage, { stream: logger.stream }));
+    app.use(addRequestId);
+    app.use(filterDuplicatedParams);
+    app.use(body_parser.urlencoded({ extended: true }));
+    app.use(body_parser.json({ limit: '200000kb' }));
 
-  // authentication middleware for v3
-  app.get('/sgx/certification/v3/platforms', auth.validateAdmin);
-  app.post('/sgx/certification/v3/platforms', auth.validateUser);
-  app.use('/sgx/certification/v3/platformcollateral', auth.validateAdmin);
-  app.use('/sgx/certification/v3/refresh', auth.validateAdmin);
-  app.put('/sgx/certification/v3/appraisalpolicy', auth.validateAdmin);
+    // authentication middleware for v3
+    app.get('/sgx/certification/v3/platforms', auth.validateAdmin);
+    app.post('/sgx/certification/v3/platforms', auth.validateUser);
+    app.use('/sgx/certification/v3/platformcollateral', auth.validateAdmin);
+    app.use('/sgx/certification/v3/refresh', auth.validateAdmin);
+    app.put('/sgx/certification/v3/appraisalpolicy', auth.validateAdmin);
 
-  if (global.PCS_VERSION === 4) {
-    // authentication middleware for v4
-    app.get('/sgx/certification/v4/platforms', auth.validateAdmin);
-    app.post('/sgx/certification/v4/platforms', auth.validateUser);
-    app.use('/sgx/certification/v4/platformcollateral', auth.validateAdmin);
-    app.use('/sgx/certification/v4/refresh', auth.validateAdmin);
-    app.put('/sgx/certification/v4/appraisalpolicy', auth.validateAdmin);
-  }
+    if (global.PCS_VERSION === 4) {
+        // authentication middleware for v4
+        app.get('/sgx/certification/v4/platforms', auth.validateAdmin);
+        app.post('/sgx/certification/v4/platforms', auth.validateUser);
+        app.use('/sgx/certification/v4/platformcollateral', auth.validateAdmin);
+        app.use('/sgx/certification/v4/refresh', auth.validateAdmin);
+        app.put('/sgx/certification/v4/appraisalpolicy', auth.validateAdmin);
+    }
 
-  // router
-  app.use('/sgx/certification/v3', sgxRouter);
-  if (global.PCS_VERSION === 4) {
-    app.use('/sgx/certification/v4', sgxRouter);
-    app.use('/tdx/certification/v4', tdxRouter);
-  }
+    // router
+    app.use('/sgx/certification/v3', sgxRouter);
+    if (global.PCS_VERSION === 4) {
+        app.use('/sgx/certification/v4', sgxRouter);
+        app.use('/tdx/certification/v4', tdxRouter);
+    }
 
-  // error handling middleware
-  app.use(error.errorHandling);
+    // error handling middleware
+    app.use(error.errorHandling);
 }
 
 function setCachingMode() {
-  const cacheMode = Config.get('CachingFillMode');
-  if (cacheMode === 'LAZY') {
-    cachingModeManager.cachingMode = new LazyCachingMode();
-  } else if (cacheMode === 'REQ') {
-    cachingModeManager.cachingMode = new ReqCachingMode();
-  } else if (cacheMode === 'OFFLINE') {
-    cachingModeManager.cachingMode = new OfflineCachingMode();
-  } else {
-    logger.error('Unknown caching mode. Please check your configuration file.');
-    logger.endAndExitProcess();
-  }
+    const cacheMode = Config.get('CachingFillMode');
+    if (cacheMode === 'LAZY') {
+        cachingModeManager.cachingMode = new LazyCachingMode();
+    } else if (cacheMode === 'REQ') {
+        cachingModeManager.cachingMode = new ReqCachingMode();
+    } else if (cacheMode === 'OFFLINE') {
+        cachingModeManager.cachingMode = new OfflineCachingMode();
+    } else {
+        logger.error('Unknown caching mode. Please check your configuration file.');
+        logger.endAndExitProcess();
+    }
 }
 
 function startHttpsServer() {
-  let privateKey;
-  let certificate;
-  try {
-    privateKey = fs.readFileSync('./ssl_key/private.pem', 'utf8');
-    certificate = fs.readFileSync('./ssl_key/file.crt', 'utf8');
-  } catch (err) {
-    logger.error('The private key or certificate for HTTPS server is missing.');
-    logger.endAndExitProcess();
-  }
-
-  const secure_sigalgs = [
-    'ecdsa_secp256r1_sha256',
-    'ecdsa_secp384r1_sha384',
-    'ecdsa_secp521r1_sha512',
-    'rsa_pss_rsae_sha256',
-    'rsa_pss_rsae_sha384',
-    'rsa_pss_rsae_sha512',
-    'rsa_pkcs1_sha256',
-    'rsa_pkcs1_sha384',
-    'rsa_pkcs1_sha512',
-  ];
-  const options = {
-    key: privateKey,
-    cert: certificate,
-    sigalgs: secure_sigalgs.join(':'),
-  };
-
-  try {
-    const httpsServer = https.createServer(options, app);
-    httpsServer.listen(Config.get('HTTPS_PORT'), Config.get('hosts'), () => {
-      logger.info(`HTTPS Server is running on: https://localhost:${Config.get('HTTPS_PORT')}`);
-      app.emit('app_started');
-    });
-  } catch (e) {
-    if (
-      e.code === 'ERR_OSSL_EVP_UNSUPPORTED' &&
-      Config.has('OPENSSL_FIPS_MODE') &&
-      Config.get('OPENSSL_FIPS_MODE')
-    ) {
-      logger.error(
-        'FIPS mode is not working correctly. Please double check your environment.'
-      );
-      logger.endAndExitProcess();
-    } else {
-      throw e;
+    let privateKey;
+    let certificate;
+    try {
+        privateKey = fs.readFileSync('./ssl_key/private.pem', 'utf8');
+        certificate = fs.readFileSync('./ssl_key/file.crt', 'utf8');
+    } catch {
+        logger.error('The private key or certificate for HTTPS server is missing.');
+        logger.endAndExitProcess();
     }
-  }
+
+    const secure_sigalgs = [
+        'ecdsa_secp256r1_sha256',
+        'ecdsa_secp384r1_sha384',
+        'ecdsa_secp521r1_sha512',
+        'rsa_pss_rsae_sha256',
+        'rsa_pss_rsae_sha384',
+        'rsa_pss_rsae_sha512',
+        'rsa_pkcs1_sha256',
+        'rsa_pkcs1_sha384',
+        'rsa_pkcs1_sha512',
+    ];
+    const options = {
+        key:     privateKey,
+        cert:    certificate,
+        sigalgs: secure_sigalgs.join(':'),
+    };
+
+    try {
+        const httpsServer = https.createServer(options, app);
+        httpsServer.listen(Config.get('HTTPS_PORT'), Config.get('hosts'), () => {
+            logger.info(`HTTPS Server is running on: https://localhost:${Config.get('HTTPS_PORT')}`);
+            app.emit('app_started');
+        });
+    } catch (e) {
+        if (
+            e.code === 'ERR_OSSL_EVP_UNSUPPORTED' &&
+            Config.has('OPENSSL_FIPS_MODE') &&
+            Config.get('OPENSSL_FIPS_MODE')
+        ) {
+            logger.error(
+                'FIPS mode is not working correctly. Please double check your environment.'
+            );
+            logger.endAndExitProcess();
+        } else {
+            throw e;
+        }
+    }
 }
 
 function scheduleRefreshJob() {
-  node_schedule.scheduleJob(Config.get('RefreshSchedule'), refreshService.scheduledRefresh);
+    node_schedule.scheduleJob(Config.get('RefreshSchedule'), refreshService.scheduledRefresh);
 }
 
 async function main() {
-  await initializeApp();
-  configureMiddlewareAndRoutes();
-  setCachingMode();
-  startHttpsServer();
-  scheduleRefreshJob();
+    await initializeApp();
+    configureMiddlewareAndRoutes();
+    setCachingMode();
+    startHttpsServer();
+    scheduleRefreshJob();
 }
 
 main();

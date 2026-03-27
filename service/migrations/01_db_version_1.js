@@ -33,129 +33,133 @@ import Config from 'config';
 import { PcsVersion } from '../dao/models/index.js';
 
 async function up(sequelize) {
-  await sequelize.transaction(async (t) => {
-    logger.info('DB Migration (Ver.0 -> 1) -- Start');
+    await sequelize.transaction(async() => {
+        logger.info('DB Migration (Ver.0 -> 1) -- Start');
 
-    // update pcs_version table
-    logger.debug('DB Migration -- Update pcs_version table');
-    let sql = 'ALTER TABLE pcs_version ADD COLUMN db_version INT DEFAULT 1';
-    await sequelize.query(sql);
+        // update pcs_version table
+        logger.debug('DB Migration -- Update pcs_version table');
+        let sql = 'ALTER TABLE pcs_version ADD COLUMN db_version INT DEFAULT 1';
+        await sequelize.query(sql);
 
-    let url = new URL(Config.get('uri'));
-    // initialize pcs_version
-    await PcsVersion.upsert({
-      id: 1,
-      api_version: 2,
-      server_addr: url.hostname,
-      db_version: 1,
-    });
-
-    // update pck_crl.pck_crl from HEX string to BINARY
-    logger.debug('DB Migration -- update pck_crl.pck_crl from HEX string to BINARY');
-    sql = 'SELECT ca, pck_crl FROM pck_crl';
-    let resultSet = await sequelize.query(sql, {
-      type: sequelize.QueryTypes.SELECT,
-    });
-    for (const record of resultSet) {
-      if (record.pck_crl) {
-        sql = 'UPDATE pck_crl SET pck_crl = $newValue WHERE ca=$key';
-        await sequelize.query(sql, {
-          bind: {
-            key: record.ca,
-            newValue: Buffer.from(record.pck_crl.toString('utf8'), 'hex'),
-          },
+        const url = new URL(Config.get('uri'));
+        // initialize pcs_version
+        await PcsVersion.upsert({
+            id:          1,
+            api_version: 2,
+            server_addr: url.hostname,
+            db_version:  1,
         });
-      }
-    }
 
-    // update pcs_certificates.crl from HEX string to BINARY
-    logger.debug('DB Migration -- update pcs_certificates.crl from HEX string to BINARY');
-    sql = 'SELECT * FROM pcs_certificates WHERE id=1';
-    resultSet = await sequelize.query(sql, {
-      type: sequelize.QueryTypes.SELECT,
-    });
-    for (const record of resultSet) {
-      if (record.crl) {
-        sql = 'UPDATE pcs_certificates SET crl = $newValue WHERE id=$id';
-        await sequelize.query(sql, {
-          bind: {
-            id: record.id,
-            newValue: Buffer.from(record.crl.toString('utf8'), 'hex'),
-          },
+        // update pck_crl.pck_crl from HEX string to BINARY
+        logger.debug('DB Migration -- update pck_crl.pck_crl from HEX string to BINARY');
+        sql = 'SELECT ca, pck_crl FROM pck_crl';
+        let resultSet = await sequelize.query(sql, {
+            type: sequelize.QueryTypes.SELECT,
         });
-      }
-    }
-
-    // update platforms(platform_manifest,enc_ppid) from HEX string to BINARY
-    logger.debug('DB Migration -- update platforms(platform_manifest,enc_ppid) from HEX string to BINARY');
-    sql = 'SELECT * FROM platforms';
-    resultSet = await sequelize.query(sql, {
-      type: sequelize.QueryTypes.SELECT,
-    });
-    for (const record of resultSet) {
-      let new_platform_manifest = '';
-      let new_enc_ppid = '';
-      if (record.platform_manifest) {
-        new_platform_manifest = Buffer.from(
-          record.platform_manifest.toString('utf8'),
-          'hex'
+        await Promise.all(resultSet
+            .filter(record => record.pck_crl)
+            .map(async record => {
+                const sql = 'UPDATE pck_crl SET pck_crl = $newValue WHERE ca=$key';
+                await sequelize.query(sql, {
+                    bind: {
+                        key:      record.ca,
+                        newValue: Buffer.from(record.pck_crl.toString('utf8'), 'hex'),
+                    },
+                });
+            })
         );
-      }
-      if (record.enc_ppid) {
-        new_enc_ppid = Buffer.from(record.enc_ppid.toString('utf8'), 'hex');
-      }
-      if (new_platform_manifest || new_enc_ppid) {
-        sql =
-          'UPDATE platforms SET platform_manifest = $newManifest, enc_ppid = $newPpid ' +
-          ' WHERE qe_id=$qe_id AND pce_id=$pce_id';
-        await sequelize.query(sql, {
-          bind: {
-            qe_id: record.qe_id,
-            pce_id: record.pce_id,
-            newManifest: new_platform_manifest,
-            newPpid: new_enc_ppid,
-          },
-        });
-      }
-    }
 
-    // update platforms_registered(platform_manifest,enc_ppid) from HEX string to BINARY
-    logger.debug('DB Migration -- update platforms_registered(platform_manifest,enc_ppid) from HEX string to BINARY');
-    sql = 'SELECT * FROM platforms_registered';
-    resultSet = await sequelize.query(sql, {
-      type: sequelize.QueryTypes.SELECT,
-    });
-    for (const record of resultSet) {
-      let new_platform_manifest = '';
-      let new_enc_ppid = '';
-      if (record.platform_manifest) {
-        new_platform_manifest = Buffer.from(
-          record.platform_manifest.toString('utf8'),
-          'hex'
+        // update pcs_certificates.crl from HEX string to BINARY
+        logger.debug('DB Migration -- update pcs_certificates.crl from HEX string to BINARY');
+        sql = 'SELECT * FROM pcs_certificates WHERE id=1';
+        resultSet = await sequelize.query(sql, {
+            type: sequelize.QueryTypes.SELECT,
+        });
+        await Promise.all(resultSet
+            .filter(record => record.crl)
+            .map(async record => {
+                const sql = 'UPDATE pcs_certificates SET crl = $newValue WHERE id=$id';
+                await sequelize.query(sql, {
+                    bind: {
+                        id:       record.id,
+                        newValue: Buffer.from(record.crl.toString('utf8'), 'hex'),
+                    },
+                });
+            })
         );
-      }
-      if (record.enc_ppid) {
-        new_enc_ppid = Buffer.from(record.enc_ppid.toString('utf8'), 'hex');
-      }
-      if (new_platform_manifest || new_enc_ppid) {
-        sql =
-          'UPDATE platforms_registered SET platform_manifest = $newManifest, enc_ppid = $newPpid ' +
-          ' WHERE qe_id=$qe_id AND pce_id=$pce_id AND cpu_svn=$cpu_svn AND pce_svn=$pce_svn ';
-        await sequelize.query(sql, {
-          bind: {
-            qe_id: record.qe_id,
-            pce_id: record.pce_id,
-            cpu_svn: record.cpu_svn,
-            pce_svn: record.pce_svn,
-            newManifest: new_platform_manifest,
-            newPpid: new_enc_ppid,
-          },
-        });
-      }
-    }
 
-    logger.info('DB Migration -- Done.');
-  });
+        // update platforms(platform_manifest,enc_ppid) from HEX string to BINARY
+        logger.debug('DB Migration -- update platforms(platform_manifest,enc_ppid) from HEX string to BINARY');
+        sql = 'SELECT * FROM platforms';
+        resultSet = await sequelize.query(sql, {
+            type: sequelize.QueryTypes.SELECT,
+        });
+        await Promise.all(resultSet
+            .filter(record => record.platform_manifest || record.enc_ppid)
+            .map(async record => {
+                let new_platform_manifest = '';
+                let new_enc_ppid = '';
+                if (record.platform_manifest) {
+                    new_platform_manifest = Buffer.from(
+                        record.platform_manifest.toString('utf8'),
+                        'hex'
+                    );
+                }
+                if (record.enc_ppid) {
+                    new_enc_ppid = Buffer.from(record.enc_ppid.toString('utf8'), 'hex');
+                }
+                const sql =
+                    'UPDATE platforms SET platform_manifest = $newManifest, enc_ppid = $newPpid ' +
+                    ' WHERE qe_id=$qe_id AND pce_id=$pce_id';
+                await sequelize.query(sql, {
+                    bind: {
+                        qe_id:       record.qe_id,
+                        pce_id:      record.pce_id,
+                        newManifest: new_platform_manifest,
+                        newPpid:     new_enc_ppid,
+                    },
+                });
+            })
+        );
+
+        // update platforms_registered(platform_manifest,enc_ppid) from HEX string to BINARY
+        logger.debug('DB Migration -- update platforms_registered(platform_manifest,enc_ppid) from HEX string to BINARY');
+        sql = 'SELECT * FROM platforms_registered';
+        resultSet = await sequelize.query(sql, {
+            type: sequelize.QueryTypes.SELECT,
+        });
+        await Promise.all(resultSet
+            .filter(record => record.platform_manifest || record.enc_ppid)
+            .map(async record => {
+                let new_platform_manifest = '';
+                let new_enc_ppid = '';
+                if (record.platform_manifest) {
+                    new_platform_manifest = Buffer.from(
+                        record.platform_manifest.toString('utf8'),
+                        'hex'
+                    );
+                }
+                if (record.enc_ppid) {
+                    new_enc_ppid = Buffer.from(record.enc_ppid.toString('utf8'), 'hex');
+                }
+                const sql =
+                    'UPDATE platforms_registered SET platform_manifest = $newManifest, enc_ppid = $newPpid ' +
+                    ' WHERE qe_id=$qe_id AND pce_id=$pce_id AND cpu_svn=$cpu_svn AND pce_svn=$pce_svn ';
+                await sequelize.query(sql, {
+                    bind: {
+                        qe_id:       record.qe_id,
+                        pce_id:      record.pce_id,
+                        cpu_svn:     record.cpu_svn,
+                        pce_svn:     record.pce_svn,
+                        newManifest: new_platform_manifest,
+                        newPpid:     new_enc_ppid,
+                    },
+                });
+            })
+        );
+
+        logger.info('DB Migration -- Done.');
+    });
 }
 
 export default { up };

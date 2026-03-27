@@ -44,4 +44,4 @@ export {
     TcbError,
     TcbInvalidFormatError,
     TcbNonComparableError
-}
+};

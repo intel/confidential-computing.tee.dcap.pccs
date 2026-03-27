@@ -32,58 +32,58 @@
 import { Platforms, sequelize } from './models/index.js';
 
 export async function upsertPlatform(
-  qe_id,
-  pce_id,
-  platform_manifest,
-  enc_ppid,
-  fmspc,
-  ca
+    qe_id,
+    pce_id,
+    platform_manifest,
+    enc_ppid,
+    fmspc,
+    ca
 ) {
-  return await Platforms.upsert({
-    qe_id: qe_id,
-    pce_id: pce_id,
-    platform_manifest: platform_manifest,
-    enc_ppid: enc_ppid,
-    fmspc: fmspc,
-    ca: ca,
-  });
+    return await Platforms.upsert({
+        qe_id,
+        pce_id,
+        platform_manifest,
+        enc_ppid,
+        fmspc,
+        ca,
+    });
 }
 
 export async function getPlatform(qe_id, pce_id) {
-  return await Platforms.findOne({ where: { qe_id: qe_id, pce_id: pce_id } });
+    return await Platforms.findOne({ where: { qe_id, pce_id } });
 }
 
 export async function updatePlatform(
-  qe_id,
-  pce_id,
-  platform_manifest,
-  enc_ppid
+    qe_id,
+    pce_id,
+    platform_manifest,
+    enc_ppid
 ) {
-  return await Platforms.update(
-    { platform_manifest: platform_manifest, enc_ppid: enc_ppid },
-    {
-      where: {
-        qe_id: qe_id,
-        pce_id: pce_id,
-      },
-    }
-  );
+    return await Platforms.update(
+        { platform_manifest, enc_ppid },
+        {
+            where: {
+                qe_id,
+                pce_id,
+            },
+        }
+    );
 }
 
 export async function getCachedPlatformsByFmspc(fmspc_arr) {
-  let sql =
-    'select a.qe_id, a.pce_id, b.cpu_svn, b.pce_svn, hex(a.enc_ppid) as enc_ppid,' +
-    ' hex(a.platform_manifest) as platform_manifest' +
-    ' from platforms a, platform_tcbs b ' +
-    ' where a.qe_id=b.qe_id and a.pce_id = b.pce_id ';
-  if (fmspc_arr.length > 0) {
-    sql += ' and a.fmspc in (:FMSPC)';
-  }
+    let sql =
+        'select a.qe_id, a.pce_id, b.cpu_svn, b.pce_svn, hex(a.enc_ppid) as enc_ppid,' +
+        ' hex(a.platform_manifest) as platform_manifest' +
+        ' from platforms a, platform_tcbs b ' +
+        ' where a.qe_id=b.qe_id and a.pce_id = b.pce_id ';
+    if (fmspc_arr.length > 0) {
+        sql += ' and a.fmspc in (:FMSPC)';
+    }
 
-  return await sequelize.query(sql, {
-    replacements: {
-      FMSPC: fmspc_arr,
-    },
-    type: sequelize.QueryTypes.SELECT,
-  });
+    return await sequelize.query(sql, {
+        replacements: {
+            FMSPC: fmspc_arr,
+        },
+        type: sequelize.QueryTypes.SELECT,
+    });
 }

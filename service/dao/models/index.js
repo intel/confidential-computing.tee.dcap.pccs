@@ -45,86 +45,86 @@ import EnclaveIdentities from './enclave_identities.js';
 import CrlCache from './crl_cache.js';
 import AppraisalPolicy from './appraisal_policy.js';
 import mysqlPromise from 'mysql2/promise.js';
-import clshooked from "cls-hooked";
+import clshooked from 'cls-hooked';
 
 const db_namespace = clshooked.createNamespace('pccs-db-namespace');
 Sequelize.useCLS(db_namespace);
 
 // get config options for ssl
 function getSSLConfig(sslConfig) {
-  if (sslConfig && sslConfig.required && fs.existsSync(sslConfig.ca)) {
-    return { ssl: { ca: fs.readFileSync(sslConfig.ca) } };
-  }
-  return null;
+    if (sslConfig && sslConfig.required && fs.existsSync(sslConfig.ca)) {
+        return { ssl: { ca: fs.readFileSync(sslConfig.ca) } };
+    }
+    return null;
 }
 
 function initModels(sequelize) {
-  FmspcTcbs.init(sequelize);
-  PckCert.init(sequelize);
-  PckCertchain.init(sequelize);
-  PckCrl.init(sequelize);
-  PcsCertificates.init(sequelize);
-  PcsVersion.init(sequelize);
-  PlatformTcbs.init(sequelize);
-  PlatformsRegistered.init(sequelize);
-  Platforms.init(sequelize);
-  EnclaveIdentities.init(sequelize);
-  CrlCache.init(sequelize);
-  AppraisalPolicy.init(sequelize);
+    FmspcTcbs.init(sequelize);
+    PckCert.init(sequelize);
+    PckCertchain.init(sequelize);
+    PckCrl.init(sequelize);
+    PcsCertificates.init(sequelize);
+    PcsVersion.init(sequelize);
+    PlatformTcbs.init(sequelize);
+    PlatformsRegistered.init(sequelize);
+    Platforms.init(sequelize);
+    EnclaveIdentities.init(sequelize);
+    CrlCache.init(sequelize);
+    AppraisalPolicy.init(sequelize);
 }
 
 async function initializeDatabase() {
-  let dbConfig = Config.get(Config.get('DB_CONFIG'));
-  let dbOptions = { ...dbConfig.options };
-  if (dbOptions.logging === true) {
-    dbOptions.logging = (msg) => logger.info(msg);
-  }
-
-  const sslOptions = getSSLConfig(dbConfig.ssl);
-  if (sslOptions) {
-    dbOptions.dialectOptions = sslOptions;
-  }
-
-  const sequelize = new Sequelize(
-    dbConfig.database,
-    dbConfig.username,
-    dbConfig.password,
-    dbOptions
-  );
-
-  try {
-    await sequelize.authenticate();
-  } catch (err) {
-    if (Config.get('DB_CONFIG') === 'mysql') {
-      // Handle MySQL specific error
-      await handleMySQLError(dbConfig, dbOptions, err);
-    } else {
-      logger.error(err);
-      logger.endAndExitProcess();
+    const dbConfig = Config.get(Config.get('DB_CONFIG'));
+    const dbOptions = { ...dbConfig.options };
+    if (dbOptions.logging === true) {
+        dbOptions.logging = (msg) => logger.info(msg);
     }
-  }
 
-  return sequelize;
+    const sslOptions = getSSLConfig(dbConfig.ssl);
+    if (sslOptions) {
+        dbOptions.dialectOptions = sslOptions;
+    }
+
+    const sequelize = new Sequelize(
+        dbConfig.database,
+        dbConfig.username,
+        dbConfig.password,
+        dbOptions
+    );
+
+    try {
+        await sequelize.authenticate();
+    } catch (err) {
+        if (Config.get('DB_CONFIG') === 'mysql') {
+            // Handle MySQL specific error
+            await handleMySQLError(dbConfig, dbOptions, err);
+        } else {
+            logger.error(err);
+            logger.endAndExitProcess();
+        }
+    }
+
+    return sequelize;
 }
 
 async function handleMySQLError(dbConfig, dbOptions, err) {
-  logger.error('Failed to connect DB. Try to create it ...');
-  try {
-    const connOptions = {
-      host: dbOptions.host,
-      port: dbOptions.port,
-      user: dbConfig.username,
-      password: dbConfig.password,
-      ...getSSLConfig(dbConfig.ssl)
-    };
-    const connection = await mysqlPromise.createConnection(connOptions);
-    await connection.query(
-      `CREATE DATABASE IF NOT EXISTS \`${dbConfig.database}\` CHARACTER SET utf8 COLLATE utf8_general_ci;`
-    );
-  } catch (err2) {
-    logger.error(err2);
-    logger.endAndExitProcess();
-  }
+    logger.error(`Failed to connect DB with error ${err.message}. Try to create it ...`);
+    try {
+        const connOptions = {
+            host:     dbOptions.host,
+            port:     dbOptions.port,
+            user:     dbConfig.username,
+            password: dbConfig.password,
+            ...getSSLConfig(dbConfig.ssl)
+        };
+        const connection = await mysqlPromise.createConnection(connOptions);
+        await connection.query(
+            `CREATE DATABASE IF NOT EXISTS \`${dbConfig.database}\` CHARACTER SET utf8 COLLATE utf8_general_ci;`
+        );
+    } catch (err2) {
+        logger.error(err2);
+        logger.endAndExitProcess();
+    }
 }
 
 const sequelize = await initializeDatabase();
@@ -132,18 +132,18 @@ initModels(sequelize); // Initialize all models
 
 
 export {
-  Sequelize,
-  sequelize,
-  FmspcTcbs,
-  PckCert,
-  PckCertchain,
-  PckCrl,
-  PcsCertificates,
-  PcsVersion,
-  PlatformTcbs,
-  PlatformsRegistered,
-  Platforms,
-  EnclaveIdentities,
-  CrlCache,
-  AppraisalPolicy,
+    Sequelize,
+    sequelize,
+    FmspcTcbs,
+    PckCert,
+    PckCertchain,
+    PckCrl,
+    PcsCertificates,
+    PcsVersion,
+    PlatformTcbs,
+    PlatformsRegistered,
+    Platforms,
+    EnclaveIdentities,
+    CrlCache,
+    AppraisalPolicy,
 };

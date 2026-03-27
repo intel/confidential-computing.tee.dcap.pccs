@@ -31,16 +31,16 @@
 import logger from './Logger.js';
 
 class PccsError extends Error {
-  constructor(obj) {
-    super(obj[1]);
+    constructor(obj) {
+        super(obj[1]);
 
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, PccsError);
-      logger.error(this.message);
+        if (Error.captureStackTrace) {
+            Error.captureStackTrace(this, PccsError);
+            logger.error(this.message);
+        }
+
+        this.status = obj[0];
     }
-
-    this.status = obj[0];
-  }
 }
 
 export default PccsError;

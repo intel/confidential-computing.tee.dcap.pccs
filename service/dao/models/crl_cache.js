@@ -31,19 +31,19 @@
 import Sequelize from 'sequelize';
 
 export default class CrlCache extends Sequelize.Model {
-  static init(sequelize) {
-    super.init(
-      {
-        cdp_url: { type: Sequelize.DataTypes.STRING, primaryKey: true },
-        crl: { type: Sequelize.DataTypes.BLOB },
-      },
-      {
-        tableName: 'crl_cache',
-        timestamps: true,
-        createdAt: 'created_time',
-        updatedAt: 'updated_time',
-        sequelize,
-      }
-    );
-  }
+    static init(sequelize) {
+        super.init(
+            {
+                cdp_url: { type: Sequelize.DataTypes.STRING, primaryKey: true },
+                crl:     { type: Sequelize.DataTypes.BLOB },
+            },
+            {
+                tableName:  'crl_cache',
+                timestamps: true,
+                createdAt:  'created_time',
+                updatedAt:  'updated_time',
+                sequelize,
+            }
+        );
+    }
 }

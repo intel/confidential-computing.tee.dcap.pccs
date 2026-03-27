@@ -36,30 +36,32 @@ import Constants from '../constants/index.js';
 import logger from '../utils/Logger.js';
 
 export async function getPckCrl(req, res, next) {
-  try {
-    // validate request parameters
-    let ca = req.query.ca;
-    if (ca) ca = ca.toUpperCase();
-    if (ca != Constants.CA_PROCESSOR && ca != Constants.CA_PLATFORM) {
-      logger.error("ca is not valid : " + ca);
-      throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
+    try {
+        // validate request parameters
+        let ca = req.query.ca;
+        if (ca) {
+            ca = ca.toUpperCase();
+        }
+        if (ca !== Constants.CA_PROCESSOR && ca !== Constants.CA_PLATFORM) {
+            logger.error(`ca is not valid : ${ca}`);
+            throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
+        }
+
+        const encoding = req.query.encoding;
+
+        // call service
+        const pckcrlJson = await pckcrlService.getPckCrl(ca, encoding);
+
+        // send response
+        res
+            .status(PccsStatus.PCCS_STATUS_SUCCESS[0])
+            .header(
+                Constants.SGX_PCK_CRL_ISSUER_CHAIN,
+                pckcrlJson[Constants.SGX_PCK_CRL_ISSUER_CHAIN]
+            )
+            .header('Content-Type', (!encoding || encoding.toUpperCase() !== 'DER') ? 'application/x-pem-file' : 'application/pkix-crl')
+            .send(pckcrlJson.pckcrl);
+    } catch (err) {
+        next(err);
     }
-
-    let encoding = req.query.encoding;
-
-    // call service
-    let pckcrlJson = await pckcrlService.getPckCrl(ca, encoding);
-
-    // send response
-    res
-      .status(PccsStatus.PCCS_STATUS_SUCCESS[0])
-      .header(
-        Constants.SGX_PCK_CRL_ISSUER_CHAIN,
-        pckcrlJson[Constants.SGX_PCK_CRL_ISSUER_CHAIN]
-      )
-      .header('Content-Type', (!encoding || encoding.toUpperCase() != 'DER')? 'application/x-pem-file' : 'application/pkix-crl')
-      .send(pckcrlJson['pckcrl']);
-  } catch (err) {
-    next(err);
-  }
 }
