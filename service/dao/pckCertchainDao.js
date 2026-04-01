@@ -44,7 +44,7 @@ export async function upsertPckCertchain(ca) {
 
     return await PckCertchain.upsert({
         ca,
-        root_cert_id: Constants.PROCESSOR_ROOT_CERT_ID,
+        root_cert_id: Constants.ROOT_CERT_ID,
         intmd_cert_id:
       ca === Constants.CA_PROCESSOR ?
           Constants.PROCESSOR_INTERMEDIATE_CERT_ID :

@@ -84,7 +84,7 @@ export async function upsertPckCertificateIssuerChain(ca, pck_certchain) {
         ca === Constants.CA_PROCESSOR ?
             Constants.PROCESSOR_INTERMEDIATE_CERT_ID :
             Constants.PLATFORM_INTERMEDIATE_CERT_ID,
-        Constants.PROCESSOR_ROOT_CERT_ID
+        Constants.ROOT_CERT_ID
     );
 }
 
@@ -98,7 +98,7 @@ export async function upsertPckCrlCertchain(ca, pck_crl_certchain) {
         ca === Constants.CA_PROCESSOR ?
             Constants.PROCESSOR_INTERMEDIATE_CERT_ID :
             Constants.PLATFORM_INTERMEDIATE_CERT_ID,
-        Constants.PROCESSOR_ROOT_CERT_ID
+        Constants.ROOT_CERT_ID
     );
 }
 
@@ -107,7 +107,7 @@ export async function upsertTcbInfoIssuerChain(tcbinfo_certchain) {
     return await upsertPcsCertchain(
         tcbinfo_certchain,
         Constants.PROCESSOR_SIGNING_CERT_ID,
-        Constants.PROCESSOR_ROOT_CERT_ID
+        Constants.ROOT_CERT_ID
     );
 }
 
@@ -118,7 +118,7 @@ export async function upsertEnclaveIdentityIssuerChain(
     return await upsertPcsCertchain(
         enclave_identity_certchain,
         Constants.PROCESSOR_SIGNING_CERT_ID,
-        Constants.PROCESSOR_ROOT_CERT_ID
+        Constants.ROOT_CERT_ID
     );
 }
 
@@ -132,7 +132,7 @@ export async function getCertificateById(ca_id) {
 
 export async function upsertRootCACrl(rootcacrl) {
     return await PcsCertificates.upsert({
-        id:  Constants.PROCESSOR_ROOT_CERT_ID,
+        id:  Constants.ROOT_CERT_ID,
         crl: rootcacrl,
     });
 }

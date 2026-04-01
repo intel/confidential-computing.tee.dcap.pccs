@@ -34,7 +34,7 @@ import { cachingModeManager } from './caching_modes/cachingModeManager.js';
 
 export async function getRootCaCrl() {
     const rootca = await pcsCertificatesDao.getCertificateById(
-        Constants.PROCESSOR_ROOT_CERT_ID
+        Constants.ROOT_CERT_ID
     );
 
     let crl = rootca?.crl;

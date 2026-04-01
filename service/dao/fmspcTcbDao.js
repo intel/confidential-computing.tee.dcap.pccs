@@ -43,7 +43,7 @@ export async function upsertFmspcTcb(tcbinfoJson) {
         version:         tcbinfoJson.version,
         update_type:     tcbinfoJson.update_type,
         tcbinfo:         tcbinfoJson.tcbinfo,
-        root_cert_id:    Constants.PROCESSOR_ROOT_CERT_ID,
+        root_cert_id:    Constants.ROOT_CERT_ID,
         signing_cert_id: Constants.PROCESSOR_SIGNING_CERT_ID,
     });
 }

@@ -247,7 +247,7 @@ async function refreshPckCrls() {
 // Refresh root CA CRL
 async function refreshRootcaCrl() {
     const rootca = await pcsCertificatesDao.getCertificateById(
-        Constants.PROCESSOR_ROOT_CERT_ID
+        Constants.ROOT_CERT_ID
     );
     if (!rootca) {
         throw new PccsError(PccsStatus.PCCS_STATUS_INTERNAL_ERROR);

@@ -80,7 +80,7 @@ export async function upsertPckCrl(ca, crl) {
     return await PckCrl.upsert({
         ca,
         pck_crl:      crl,
-        root_cert_id: Constants.PROCESSOR_ROOT_CERT_ID,
+        root_cert_id: Constants.ROOT_CERT_ID,
         intmd_cert_id:
       ca === Constants.CA_PROCESSOR ?
           Constants.PROCESSOR_INTERMEDIATE_CERT_ID :

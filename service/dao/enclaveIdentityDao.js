@@ -40,7 +40,7 @@ export async function upsertEnclaveIdentity(id, identity, version, update_type) 
         version,
         update_type,
         identity,
-        root_cert_id:    Constants.PROCESSOR_ROOT_CERT_ID,
+        root_cert_id:    Constants.ROOT_CERT_ID,
         signing_cert_id: Constants.PROCESSOR_SIGNING_CERT_ID,
     });
 }

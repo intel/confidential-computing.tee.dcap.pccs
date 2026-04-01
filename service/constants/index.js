@@ -50,7 +50,7 @@ define('SGX_FMSPC', 'SGX-FMSPC');
 define('SGX_PCK_CERTIFICATE_CA_TYPE', 'SGX-PCK-Certificate-CA-Type');
 
 // Certificate IDs
-define('PROCESSOR_ROOT_CERT_ID', 1);
+define('ROOT_CERT_ID', 1);
 define('PROCESSOR_INTERMEDIATE_CERT_ID', 2);
 define('PROCESSOR_SIGNING_CERT_ID', 3);
 define('PLATFORM_INTERMEDIATE_CERT_ID', 4);

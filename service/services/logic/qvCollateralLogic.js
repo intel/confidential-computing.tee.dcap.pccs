@@ -90,7 +90,7 @@ export async function checkQuoteVerificationCollateral(update) {
 
     // Root CA crl
     const rootca = await pcsCertificatesDao.getCertificateById(
-        Constants.PROCESSOR_ROOT_CERT_ID
+        Constants.ROOT_CERT_ID
     );
     if (rootca === null || rootca.crl === null) {
         await CommonCacheLogic.getRootCACrlFromPCS(rootca);
