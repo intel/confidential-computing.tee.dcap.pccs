@@ -36,16 +36,9 @@
   "overrides": {
     "tar": "^7.5.12",
     "diff": "^8.0.3",
-    "umzug": {
-      "@rushstack/ts-command-line": {
-        "@rushstack/terminal": {
-          "@rushstack/node-core-library": {
-            "ajv": "^8.18.0"
-          }
-        }
-      }
+    "@rushstack/node-core-library@*": {
+      "ajv": "^8.18.0"
     },
-    "ajv": "^8.18.0",
     "minimatch": "^10.2.4",
     "@tootallnate/once": "^3.0.1"
   },
