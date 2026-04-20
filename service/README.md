@@ -49,7 +49,7 @@ Install Node.js (Supported versions are `18.17.0` and later)
   sudo apt install sgx-dcap-pccs
 
   # Alternatively, if you have built from source or downloaded the package manually
-  sudo apt install sgx-dcap-pccs*${version}-${os}*.deb
+  sudo apt install ./sgx-dcap-pccs*.deb
   ```
 
 You will be prompted for configuration settings during the installation process.
@@ -67,7 +67,7 @@ You'll need to then call `/opt/intel/sgx-dcap-pccs/startup.sh debian` manually t
   sudo dnf install sgx-dcap-pccs
 
   # Alternatively, if you have built from source or downloaded the package manually
-  sudo dnf install sgx-dcap-pccs*${version}-${os}*.rpm
+  sudo dnf install ./sgx-dcap-pccs*.rpm
   ```
 
 After the RPM package was installed, go to the root directory of the PCCS (`/opt/intel/sgx-dcap-pccs/`) and run `install.sh` with account `pccs`:
@@ -107,9 +107,12 @@ After the RPM package was installed, go to the root directory of the PCCS (`/opt
    You can also generate an insecure key and certificate pair with following commands (only for debug purpose):
 
    ``` batch
+   if not exist ssl_key mkdir ssl_key
+   cd ssl_key
    openssl genrsa -out private.pem 2048
    openssl req -new -key private.pem -out csr.pem
    openssl x509 -req -days 365 -in csr.pem -signkey private.pem -out file.crt
+   cd ..
    ```
 
 5. From the root directory of your installation folder, run `install.bat` with administrator privilege
@@ -197,7 +200,7 @@ In `/etc/sgx_default_qcnl.conf`, set `"use_secure_cert": true` (For Windows see 
 
 ## Manage the PCCS service
 
-- If the PCCS was installed by Debian package or RPM package
+- If the PCCS was installed by Debian package or RPM package as a system service
 
     1. Check status:
        ```bash
@@ -213,6 +216,13 @@ In `/etc/sgx_default_qcnl.conf`, set `"use_secure_cert": true` (For Windows see 
   ``` bash
   NODE_ENV=production node pccs_server.js
   ```
+  or simply
+  ```bash
+  npm start
+  ```
+  executed inside installation directory.
+
+  PCCS installed this way won't start automatically after machine restart. You need to start it manually after each reboot.
 
 ## Uninstall
 
