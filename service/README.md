@@ -30,7 +30,6 @@ The PCCS exposes similar HTTPS interfaces as [Intel® SGX and Intel® TDX Provis
 > [!NOTE]
 > You may also want to refer to our [enabling documentation](https://cc-enabling.trustedservices.intel.com/intel-tdx-enabling-guide/02/infrastructure_setup/#provisioning-certificate-caching-service-pccs) for a streamlined installation instruction.
 
-
 ### Prerequisites
 
 Install Node.js (Supported versions are `18.17.0` and later)
@@ -84,6 +83,8 @@ After the RPM package was installed, go to the root directory of the PCCS (`/opt
    ```
 
 3. From the root directory of your installation folder, run `./install.sh`.
+4. If you want to run PCCS as a system service, run `sudo ./startup.sh`
+5. To start the service and check its status, see section [Manage the PCCS service](#manage-the-pccs-service)
 
 ### Windows manual installation
 
@@ -115,8 +116,9 @@ After the RPM package was installed, go to the root directory of the PCCS (`/opt
    cd ..
    ```
 
-5. From the root directory of your installation folder, run `install.bat` with administrator privilege
-   This will install the required npm packages and install the Windows service.
+5. From the root directory of your installation folder, run `install.bat`.
+6. If you want to run PCCS as a system service, run `startup.bat` with administrator privilege.
+7. To start the service and check its status, see section [Manage the PCCS service](#manage-the-pccs-service)
 
 > [!NOTE]
 > If a self-signed insecure key and certificate are used, you need to set `"use_secure_cert": false` when
@@ -200,17 +202,31 @@ In `/etc/sgx_default_qcnl.conf`, set `"use_secure_cert": true` (For Windows see 
 
 ## Manage the PCCS service
 
-- If the PCCS was installed by Debian package or RPM package as a system service
+- If the PCCS was installed as a system service using Debian or RPM package
 
-    1. Check status:
-       ```bash
-       sudo systemctl status pccs
-       ```
+1. Start/Stop/Restart PCCS:
+   ``` bash
+   sudo systemctl start pccs
+   sudo systemctl stop pccs
+   sudo systemctl restart pccs
+   ```
 
-    2. Start/Stop/Restart PCCS:
-       ``` bash
-       sudo systemctl start/stop/restart pccs
-       ```
+2. Check status:
+   ```bash
+   sudo systemctl status pccs
+   ```
+
+- If the PCCS was installed as Windows service
+
+1. Check `intelrsgxpckcertificatecachingservice.exe` service status in Task Manager (Services tab) or `Intel(R) SGX PCK Certificate Caching Service` service status in the Services management console (services.msc).
+2. Start/Stop the service from Task Manager (Services tab) or Services management console (services.msc)
+   or use the following commands in an administrator command prompt:
+   ``` batch
+   net start "Intel(R) SGX PCK Certificate Caching Service"
+   net stop "Intel(R) SGX PCK Certificate Caching Service"
+   ```
+3. Read application logs stored in `*.log` files in `daemon/` folder in service installation directory
+4. Service events can be found in Events Viewer in `Windows Logs` -> `Application` section by source `intelrsgxpckcertificatecachingservice.exe` or `Intel(R) SGX PCK Certificate Caching Service`
 
 - If the PCCS was installed manually by current user, you can start it with the following command:
   ``` bash

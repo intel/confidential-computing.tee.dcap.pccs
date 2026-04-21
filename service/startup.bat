@@ -1,6 +1,6 @@
 @ echo off
 @rem
-@rem Copyright (C) 2011-2026 Intel Corporation
+@rem Copyright (C) 2026 Intel Corporation
 @rem
 @rem Redistribution and use in source and binary forms, with or without modification,
 @rem are permitted provided that the following conditions are met:
@@ -29,18 +29,8 @@
 @rem
 @rem SPDX-License-Identifier: BSD-3-Clause
 
-echo Remove system service ...
-
 call npm install node-windows@1.0.0-beta.8 -g
 
 call npm link node-windows
 
-call node pccs.winsvc.uninst.cjs
-
-if exist node_modules call rd /s /q node_modules
-
-if exist daemon call rd /s /q daemon
-
-
-
-
+call node pccs.winsvc.inst.cjs

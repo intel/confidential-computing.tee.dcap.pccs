@@ -29,4 +29,25 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-rm -rf node_modules
+set -e
+
+if [ "$(id -u)" -ne 0 ]; then
+    echo "Root privilege is required."
+    exit 1
+fi
+
+#Remove PCCS system service
+echo -n "Uninstalling PCCS service... "
+if [ -d /run/systemd/system ]; then
+    systemctl stop pccs || true
+    systemctl disable pccs || true
+    systemctl daemon-reload
+elif [ -d /etc/init/ ]; then
+    /sbin/initctl reload-configuration
+fi
+echo "finished."
+
+PCCS_HOME=$(cd "$(dirname "$0")" && pwd -P)
+echo -n "Removing node_modules... "
+rm -rf "${PCCS_HOME}/node_modules"
+echo "finished."

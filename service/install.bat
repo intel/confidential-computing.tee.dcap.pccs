@@ -80,9 +80,3 @@ if "%option%"=="1" (
 	goto ask_again
 )
 :continue_install
-
-call npm install node-windows@1.0.0-beta.8 -g
-
-call npm link node-windows
-
-call node pccs.winsvc.inst.cjs

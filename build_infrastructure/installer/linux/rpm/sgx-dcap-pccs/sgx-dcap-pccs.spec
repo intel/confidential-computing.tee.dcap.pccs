@@ -110,7 +110,7 @@ sed -i 's#^%{_install_path}/config/default.json#%config &#' %{_specdir}/listfile
 if [ -x %{_install_path}/startup.sh ]; then %{_install_path}/startup.sh; fi
 
 %preun
-if [ $1 == 0 -a -x %{_install_path}/cleanup.sh ]; then %{_install_path}/cleanup.sh; fi
+if [ "$1" -eq 0 ] && [ -x %{_install_path}/uninstall.sh ]; then %{_install_path}/uninstall.sh; fi
 
 %changelog
 * Mon Mar 10 2020 SGX Team

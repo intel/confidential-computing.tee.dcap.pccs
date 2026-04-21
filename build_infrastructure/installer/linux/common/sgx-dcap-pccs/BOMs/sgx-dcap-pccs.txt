@@ -77,11 +77,11 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/service/utils/errors.js	<installdir>/utils/errors.js	0	main	STP
 <deliverydir>/service/x509/x509.js	<installdir>/x509/x509.js	0	main	STP
 <deliverydir>/service/install.sh	<installdir>/install.sh	0	main	STP
+<deliverydir>/service/uninstall.sh	<installdir>/uninstall.sh	0	main	STP
 <deliverydir>/service/package.json	<installdir>/package.json	0	main	STP
 <deliverydir>/service/package-lock.json	<installdir>/package-lock.json	0	main	STP
 <deliverydir>/service/pccs_server.js	<installdir>/pccs_server.js	0	main	STP
 <deliverydir>/service/pccs.service	<installdir>/pccs.service	0	main	STP
 <deliverydir>/service/startup.sh	<installdir>/startup.sh	0	main	STP
-<deliverydir>/service/cleanup.sh	<installdir>/cleanup.sh	0	main	STP
 <deliverydir>/service/README.md	<installdir>/README.md	0	main	STP
 <deliverydir>/service/nodejs.cnf	<installdir>/nodejs.cnf	0	main	STP
