@@ -13,7 +13,7 @@ ARG BUILD_OUTPUT_DIR=${SRC_OUTPUT_DIR}/service
 FROM docker.io/library/debian:12 AS builder
 
 # Define arguments used across multiple stages
-ARG DCAP_VERSION=DCAP_1.25
+ARG DCAP_VERSION=DCAP_1.26
 ARG SRC_LOCATION=https://github.com/intel/confidential-computing.tee.dcap.pccs.git
 ARG NODE_VERSION
 
