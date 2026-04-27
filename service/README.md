@@ -41,7 +41,17 @@ Install Node.js (Supported versions are `18.17.0` and later)
 > The next release will no longer support Node.js v18 which is already End-of-Life (EOL) and v20 which will reach End-of-Life (EOL) status soon.
 > Future releases will only support Node.js LTS versions that are in Active LTS or Maintenance LTS status according to the official [Node.js release schedule](https://nodejs.org/en/about/previous-releases).
 
+> [!NOTE]
+> If you have installed old `libsgx-dcap-pccs` releases with root privilege before, some folders may remain even after you uninstall it.
+> You can delete them manually with root privilege.
+
 ### Install via Linux Debian package installer
+
+#### Using interactive installer
+
+In interactive mode, you will be prompted for configuration settings during the installation process.
+
+Install from package repository or DEB file
 
   ``` bash
   # If you have the package repository set-up
@@ -51,28 +61,46 @@ Install Node.js (Supported versions are `18.17.0` and later)
   sudo apt install ./sgx-dcap-pccs*.deb
   ```
 
-You will be prompted for configuration settings during the installation process.
+If you cancelled installation in interactive mode, the package remains half-configured. Run `sudo dpkg --configure sgx-dcap-pccs` to re-trigger the configuration process.
+
+To start the service and check its status, see section [Manage the PCCS service](#manage-the-pccs-service)
+
+#### In non-interactive mode
+
 If you would like to bypass the prompts and configure the PCCS at a later stage, make sure to set `DEBIAN_FRONTEND=noninteractive` before invoking `apt`.
-You'll need to then call `/opt/intel/sgx-dcap-pccs/startup.sh debian` manually to finish up the interactive configuration, or manually edit the relevant configuration files.
 
-> [!NOTE]
-> If you have installed old `libsgx-dcap-pccs` releases with root privilege before, some folders may remain even after you uninstall it.  
-> You can delete them manually with root privilege, for example, `~/.npm/`, etc.
-
-### Install via RPM package installer
+Install from package repository or DEB file
 
   ``` bash
   # If you have the package repository set-up
-  sudo dnf install sgx-dcap-pccs
+  sudo env DEBIAN_FRONTEND=noninteractive apt install sgx-dcap-pccs
 
   # Alternatively, if you have built from source or downloaded the package manually
-  sudo dnf install ./sgx-dcap-pccs*.rpm
+  sudo env DEBIAN_FRONTEND=noninteractive apt install ./sgx-dcap-pccs*.deb
   ```
 
-After the RPM package was installed, go to the root directory of the PCCS (`/opt/intel/sgx-dcap-pccs/`) and run `install.sh` with account `pccs`:
+You'll need to then call `sudo -u pccs /opt/intel/sgx-dcap-pccs/install.sh` manually to finish up the interactive configuration, or manually edit the relevant configuration files.
+
+To start the service and check its status, see section [Manage the PCCS service](#manage-the-pccs-service)
+
+### Install via RPM package installer
+
+1. Install from package repository or RPM file
    ``` bash
+   # If you have the package repository set-up
+   sudo dnf install sgx-dcap-pccs
+   
+   # Alternatively, if you have built from source or downloaded the package manually
+   sudo dnf install ./sgx-dcap-pccs*.rpm
+   ```
+
+2. After the RPM package was installed, go to the root directory of the PCCS (`/opt/intel/sgx-dcap-pccs/`) and run `install.sh` with account `pccs`:
+   ``` bash
+   cd /opt/intel/sgx-dcap-pccs/
    sudo -u pccs ./install.sh
    ```
+
+3. To start the service and check its status, see section [Manage the PCCS service](#manage-the-pccs-service)
 
 ### Linux manual installation
 
@@ -204,16 +232,21 @@ In `/etc/sgx_default_qcnl.conf`, set `"use_secure_cert": true` (For Windows see 
 
 - If the PCCS was installed as a system service using Debian or RPM package
 
-1. Start/Stop/Restart PCCS:
+1. Check status:
+   ```bash
+   sudo systemctl status pccs
+   ```
+
+2. Start/Stop/Restart PCCS:
    ``` bash
    sudo systemctl start pccs
    sudo systemctl stop pccs
    sudo systemctl restart pccs
    ```
 
-2. Check status:
+3. Check pccs service logs:
    ```bash
-   sudo systemctl status pccs
+   sudo journalctl -u pccs
    ```
 
 - If the PCCS was installed as Windows service
@@ -239,6 +272,8 @@ In `/etc/sgx_default_qcnl.conf`, set `"use_secure_cert": true` (For Windows see 
   executed inside installation directory.
 
   PCCS installed this way won't start automatically after machine restart. You need to start it manually after each reboot.
+
+  Application logs are stored in `./logs/pccs_server.log` inside installation directory.
 
 ## Uninstall
 

@@ -69,17 +69,18 @@ function checkDependencies() {
 }
 
 function promptDbMigration() {
-    echo -e "${YELLOW}Warning: If you are upgrading PCCS from an old release, the existing cache database will be updated automatically. ${NC} "
+    echo -e "${YELLOW}Warning: If you are upgrading PCCS from an old release, the existing cache database will be migrated automatically. ${NC} "
     echo -e "${YELLOW}         It's strongly recommended to backup your existing cache database first and then continue the installation. ${NC} "
-    echo -e "${YELLOW}         For DCAP releases 1.8 and earlier, the cache database can't be updated so you need to delete it manually. ${NC} "
     while :
     do
-        read -p "Do you want to install PCCS now? (Y/N) :" auto_update_db
+        read -p "Do you want to install PCCS now and run database schema migrations? (Y/N) :" auto_update_db
         if [[ "$auto_update_db" == "Y" || "$auto_update_db" == "y" ]]
         then
             break
         elif [[ "$auto_update_db" == "N" || "$auto_update_db" == "n" ]]
         then
+            echo "Installation cancelled. Make sure you have a backup of the cache database."
+            echo "When you are ready, please re-trigger the configuration process."
             exit 1
         elif [ ! -t 0 ] # non-interactive terminal
         then
