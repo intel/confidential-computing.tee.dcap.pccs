@@ -148,7 +148,13 @@ class PccsClient:
             if response.status_code == 200:
                 self._write_output_file(output_file, response)
             elif response.status_code == 401:  # Authentication error
-                self.credentials.set_admin_token('')
+                try:
+                    self.credentials.set_admin_token('')
+                except:
+                    # If keyring is unavailable, we don't want to trigger
+                    # traceback, as the user may have declined to save
+                    # the key in the keyring earlier
+                    pass
                 print("Authentication failed.")
             else:
                 self._handle_error(response)
@@ -178,7 +184,13 @@ class PccsClient:
                 if response.status_code == 200:
                     print("Collaterals uploaded successfully.")
                 elif response.status_code == 401:  # Authentication error
-                    self.credentials.set_admin_token('')
+                    try:
+                        self.credentials.set_admin_token('')
+                    except:
+                        # If keyring is unavailable, we don't want to trigger
+                        # traceback, as the user may have declined to save
+                        # the key in the keyring earlier
+                        pass
                     print("Authentication failed.")
                 else:
                     self._handle_error(response)
@@ -194,7 +206,13 @@ class PccsClient:
                 if response.status_code == 200:
                     print("Policy uploaded successfully with policy ID :" + response.text)
                 elif response.status_code == 401:  # Authentication error
-                    self.credentials.set_admin_token('')
+                    try:
+                        self.credentials.set_admin_token('')
+                    except:
+                        # If keyring is unavailable, we don't want to trigger
+                        # traceback, as the user may have declined to save
+                        # the key in the keyring earlier
+                        pass
                     print("Authentication failed.")
                 else:
                     self._handle_error(response)
@@ -227,7 +245,13 @@ class PccsClient:
             if response.status_code == 200:
                 print("The cache database was refreshed successfully.")
             elif response.status_code == 401:  # Authentication error
-                self.credentials.set_admin_token('')
+                try:
+                    self.credentials.set_admin_token('')
+                except:
+                    # If keyring is unavailable, we don't want to trigger
+                    # traceback, as the user may have declined to save
+                    # the key in the keyring earlier
+                    pass
                 print("Authentication failed.")
             else:
                 self._handle_error(response)
