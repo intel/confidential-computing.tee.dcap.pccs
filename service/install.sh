@@ -45,14 +45,14 @@ function version_ge() { test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$
 # check nodejs version
 function checkDependencies() {
     echo "Checking nodejs version ..."
-    expected_node_v="v18.17.0"
+    expected_node_v="v22.13.0"
     if command -v node > /dev/null 2>&1
     then
         cur_node_v=$(node -v)
         if version_ge $cur_node_v $expected_node_v; then
             echo "nodejs is installed, continue..."
         else
-            echo -e "${RED}The minimum node.js version required is ${expected_node_v}. Installation aborted. ${NC} "
+            echo -e "${RED}The minimum node.js version required is ${expected_node_v}. Currently available version is ${cur_node_v}. Installation aborted. ${NC} "
             exit 1
         fi
     else

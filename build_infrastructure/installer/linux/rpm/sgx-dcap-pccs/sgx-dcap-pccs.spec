@@ -38,18 +38,21 @@ Summary:        Intel(R) Software Guard Extensions PCK Caching Service
 Group:          Applications/Internet
 
 # Note: NodeJS version constraint is deliberately lax, to allow for forward-compat
-#       As of time of this writing, the Intel_SGX_SW_Installation_Guide_for_Linux.pdf declares support for: (18.17.0 to 18.19.1, 20.0.0 to 20.11.1, or 21.0.0 to 21.5.0)
+#       As of time of this writing, we declare official support
+#       for Active LTS (v24) or Maintenance LTS (v22) versions
 #
-# Note2: RedHat-based systems have the virtual nodejs package with epoch 1, so a naive 'nodejs >= 18.17.0' does not work due to '1:16.20.2' > '0:18.17.0'
+# Note2: RedHat-based systems have the virtual nodejs package with epoch 1, so a naive 'nodejs >= 22.13.0' does not work due to '1:16.20.2' > '0:22.13.0'
 #        Also, while 'nodejsXX' packages are more commonly in use, the NodeSource project provides backports at epoch 0 or 2, so the below may not be 100% robust if
 #        there's a package like 2:1.1.0, but should be versatile enough to catch most issues and not create a false-negative scenario w/ a proper version not allowed.
-#        For example, every nsolid package will saturate the nodejs >= 1:18.17.0 predicate which is why we exclude it there (but it still provides nodejs(engine) so would be allowed)
+#        For example, every nsolid package will saturate the nodejs >= 1:22.13.0 predicate which is why we exclude it there (but it still provides nodejs(engine) so would be allowed)
 #
-Requires:       ((nodejs(engine) >= 18.17.0) or (nodejs >= 1:18.17.0 unless nsolid) or ((nodejs >= 0:18.17.0 and nodejs < 1:) unless nsolid) or nodejs18 >= 18.17.0 or nodejs20 or nodejs22 or nodejs24)
+Requires:       ((nodejs(engine) >= 22.13.0) or (nodejs >= 1:22.13.0 unless nsolid) or ((nodejs >= 0:22.13.0 and nodejs < 1:) unless nsolid) or nodejs24 or nodejs22)
 
-Requires:       npm, cracklib
+Requires:       (npm or nodejs24-npm or npm24 or nodejs22-npm or npm22)
 
-%if 0%{?sle_version} == 0
+Requires:       cracklib
+
+%if 0%{?suse_version} == 0
 # On OpenSUSE cracklib comes with `cracklib-dict` as a required dep (and `cracklib-dict` is n/a). On other systems, it needs to be installed separate.
 Requires:       cracklib-dicts
 # 'startup.sh' is using 'adduser', which is provided by the shadow-utils package

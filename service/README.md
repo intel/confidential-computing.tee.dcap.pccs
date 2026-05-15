@@ -32,14 +32,10 @@ The PCCS exposes similar HTTPS interfaces as [Intel® SGX and Intel® TDX Provis
 
 ### Prerequisites
 
-Install Node.js (Supported versions are `18.17.0` and later)
-
-- For Debian and Ubuntu based distributions, please refer to https://github.com/nodesource/distributions
-- To download and install, go to https://nodejs.org/en/download/
+Install Node.js (in Active LTS or Maintenance LTS status according to the official [Node.js release schedule](https://nodejs.org/en/about/previous-releases)) from [NodeSource](https://nodesource.com/products/distributions) or [official Node.js site](https://nodejs.org/en/download)
 
 > [!NOTE]
-> The next release will no longer support Node.js v18 which is already End-of-Life (EOL) and v20 which will reach End-of-Life (EOL) status soon.
-> Future releases will only support Node.js LTS versions that are in Active LTS or Maintenance LTS status according to the official [Node.js release schedule](https://nodejs.org/en/about/previous-releases).
+> Node.js v18 and v20, which are End-of-Life (EOL), are no longer supported.
 
 > [!NOTE]
 > If you have installed old `libsgx-dcap-pccs` releases with root privilege before, some folders may remain even after you uninstall it.
@@ -216,7 +212,7 @@ The file with the collaterals can be then transferred back to a PCCS-connected h
 You can run the PCCS on `localhost` for product development or setup it as a public remote service in datacenter.
 Typical setup flow for **Local** Service mode (Ubuntu 22.04 as example):
 
-1. Install Node.js via package manager (version 18.17 or later from official Node.js site).
+1. Install Node.js (in Active LTS or Maintenance LTS status according to the official [Node.js release schedule](https://nodejs.org/en/about/previous-releases)) from [NodeSource](https://nodesource.com/products/distributions) or [official Node.js site](https://nodejs.org/en/download)
 2. Request an API key from Intel's Provisioning Certificate Service.
 3. Install the PCCS through Debian package.
 

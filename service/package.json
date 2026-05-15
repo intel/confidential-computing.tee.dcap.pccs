@@ -5,13 +5,13 @@
   "type": "module",
   "dependencies": {
     "@fidm/x509": "^1.2.1",
-    "ajv": "^8.18.0",
-    "ajv-formats": "^2.1.1",
-    "body-parser": "^1.20.4",
+    "ajv": "^8.19.0",
+    "ajv-formats": "^3.0.1",
+    "body-parser": "^2.2.0",
     "caw": "^2.0.1",
     "cls-hooked": "^4.2.2",
-    "config": "^3.3.12",
-    "cross-env": "^7.0.3",
+    "config": "^4.4.1",
+    "cross-env": "^10.1.0",
     "express": "^4.22.1",
     "got": "^11.8.6",
     "morgan": "^1.10.1",
@@ -20,28 +20,28 @@
     "sequelize": "^6.37.8",
     "sqlite3": "^5.1.7",
     "umzug": "^3.8.2",
-    "winston": "^3.18.3"
+    "winston": "^3.19.0"
   },
   "devDependencies": {
-    "chai": "^6.2.1",
+    "chai": "^6.2.2",
     "mocha": "^11.7.5",
-    "sinon": "^21.0.0",
-    "eslint": "^9.39.2",
-    "eslint-plugin-chai-friendly": "^1.1.0",
-    "eslint-plugin-n": "^17.23.2"
+    "sinon": "^21.1.2",
+    "eslint": "^10.3.0",
+    "@eslint/js": "^10.0.1",
+    "eslint-plugin-chai-friendly": "^1.2.0",
+    "eslint-plugin-n": "^18.0.0"
   },
   "engines": {
-    "node": ">= 18.17.0"
+    "node": ">= 22.13.0"
   },
   "overrides": {
-    "tar": "^7.5.12",
-    "diff": "^8.0.3",
-    "@rushstack/node-core-library@*": {
-      "ajv": "^8.18.0"
-    },
-    "minimatch": "^10.2.4",
+    "tar": "^7.5.13",
+    "diff": "^9.0.0",
+    "minimatch": "^10.2.5",
     "@tootallnate/once": "^3.0.1",
-    "lodash": "^4.18.1"
+    "lodash": "^4.18.1",
+    "serialize-javascript": "^7.0.5",
+    "uuid": "^9.0.1"
   },
   "scripts": {
     "start": "cross-env NODE_ENV=production node pccs_server.js",
