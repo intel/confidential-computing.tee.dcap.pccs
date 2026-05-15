@@ -73,7 +73,7 @@ function promptDbMigration() {
     echo -e "${YELLOW}         It's strongly recommended to backup your existing cache database first and then continue the installation. ${NC} "
     while :
     do
-        read -p "Do you want to install PCCS now and run database schema migrations? (Y/N) :" auto_update_db
+        read -p "Do you want to run database schema migrations now? (Y/N) :" auto_update_db
         if [[ "$auto_update_db" == "Y" || "$auto_update_db" == "y" ]]
         then
             break
