@@ -13,7 +13,7 @@ ARG BUILD_OUTPUT_DIR=${SRC_OUTPUT_DIR}/service
 FROM docker.io/library/debian:12 AS builder
 
 # Define arguments used across multiple stages
-ARG DCAP_VERSION=DCAP_1.26
+ARG DCAP_VERSION=main
 ARG SRC_LOCATION=https://github.com/intel/confidential-computing.tee.dcap.pccs.git
 ARG NODE_VERSION
 
@@ -30,7 +30,7 @@ RUN DEBIAN_FRONTEND=noninteractive \
     && rm -rf /var/lib/apt/lists/*
 
 # Install nvm (Node Version Manager)
-RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.4/install.sh | bash
 
 # Set NVM_DIR so we can use it in subsequent commands
 ENV NVM_DIR=/root/.nvm

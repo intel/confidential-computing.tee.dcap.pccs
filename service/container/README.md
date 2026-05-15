@@ -1,6 +1,8 @@
 ## 1. Build container image
+Replace `DCAP_X.Y` in the following command with the [official release tag](https://github.com/intel/confidential-computing.tee.dcap.pccs/tags) or branch.
+When the `DCAP_VERSION` build-arg is not provided, main branch will be used.
 ``` bash
-docker build -t pccs:my_tag .
+docker build --build-arg DCAP_VERSION=DCAP_X.Y -t pccs:my_tag .
 ```
 
 ## 2. Generate certificates to use with PCCS
@@ -43,6 +45,7 @@ For example, if intending to use the built-in SQLite DB for testing ( `"DB_CONFI
 For example:  for `"storage": "/data/pckcache.db"` make sure to mount `/data` as a volume (e.g. by adding `-v $PWD/data:/data` to the docker run command below and ensuring that `$PWD/data` directory exists and container has permissions to write to it e.g. by running `mkdir $PWD/data && sudo chown :70636373 $PWD/data && chmod g+w $PWD/data` - `70636373` is default ID for group `pccs`).
 
 ## 4. Run container
+Replace `my_tag` with the tag of Docker image you built in point 1.
 ``` bash
 cd && \
 docker run \
