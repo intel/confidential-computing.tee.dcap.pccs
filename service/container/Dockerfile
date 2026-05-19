@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 # Declare nodejs version you want to use
-ARG NODE_VERSION=20.12.2
+ARG NODE_VERSION=24.15.0
 
 # Declare directories when source will be copied and service will be built
 # this need to match the directory location in the cloned source layout
