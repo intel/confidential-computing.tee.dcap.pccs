@@ -32,7 +32,9 @@ The PCCS exposes similar HTTPS interfaces as [Intel® SGX and Intel® TDX Provis
 
 ### Prerequisites
 
-Install Node.js (in Active LTS or Maintenance LTS status according to the official [Node.js release schedule](https://nodejs.org/en/about/previous-releases)) from [NodeSource](https://nodesource.com/products/distributions) or [official Node.js site](https://nodejs.org/en/download)
+Install Node.js (in Active LTS or Maintenance LTS status according to the official [Node.js release schedule](https://nodejs.org/en/about/previous-releases)) from official repositories of your Linux distribution (if they provide Node.js v22.13.0 or later), [NodeSource](https://nodesource.com/products/distributions) or [official Node.js site](https://nodejs.org/en/download).
+
+Make sure `node --version` reports version v22.13.0 or higher.
 
 > [!NOTE]
 > Node.js v18 and v20, which are End-of-Life (EOL), are no longer supported.
@@ -212,7 +214,7 @@ The file with the collaterals can be then transferred back to a PCCS-connected h
 You can run the PCCS on `localhost` for product development or setup it as a public remote service in datacenter.
 Typical setup flow for **Local** Service mode (Ubuntu 22.04 as example):
 
-1. Install Node.js (in Active LTS or Maintenance LTS status according to the official [Node.js release schedule](https://nodejs.org/en/about/previous-releases)) from [NodeSource](https://nodesource.com/products/distributions) or [official Node.js site](https://nodejs.org/en/download)
+1. Install Node.js (in Active LTS or Maintenance LTS status according to the official [Node.js release schedule](https://nodejs.org/en/about/previous-releases)) from official repositories of your Linux distribution (if they provide Node.js v22.13.0 or later), [NodeSource](https://nodesource.com/products/distributions) or [official Node.js site](https://nodejs.org/en/download).
 2. Request an API key from Intel's Provisioning Certificate Service.
 3. Install the PCCS through Debian package.
 
