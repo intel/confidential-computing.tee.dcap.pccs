@@ -52,14 +52,9 @@ import { selectBestPckCert } from '../pckCertSelection/pckCertSelection.js';
 async function refreshEnclaveIdentities() {
     let enclaveIdList;
     if (global.PCS_VERSION === 3) {
-        enclaveIdList = [
-            [Constants.QE_IDENTITY_ID, 3],
-            [Constants.QVE_IDENTITY_ID, 3],
-        ];
+        return;
     } else if (global.PCS_VERSION === 4) {
         enclaveIdList = [
-            [Constants.QE_IDENTITY_ID, 3],
-            [Constants.QVE_IDENTITY_ID, 3],
             [Constants.QE_IDENTITY_ID, 4],
             [Constants.QVE_IDENTITY_ID, 4],
             [Constants.TDQE_IDENTITY_ID, 4],

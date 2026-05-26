@@ -60,8 +60,8 @@ export async function checkQuoteVerificationCollateral(update) {
     } else {
         throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
     }
-    // Fetching for both versions 3 and 4 if PCS_VERSION is 4
-    const versionsToFetch = pcsVersion === 4 ? [3, 4] : [pcsVersion];
+
+    const versionsToFetch = [pcsVersion];
 
     await Promise.all(identityTypes
         .flatMap(id => versionsToFetch
