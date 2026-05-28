@@ -314,9 +314,10 @@ export async function getTcbInfoFromPCS(type, fmspc, version, update_type) {
         tcbinfo: pck_server_res.rawBody
     };
     const issuerChainName = appUtil.getTcbInfoIssuerChainName(version);
+    const pcsHeaderName = appUtil.getTcbInfoIssuerChainName(global.PCS_VERSION);
     result[issuerChainName] = pcsClient.getHeaderValue(
         pck_server_res.headers,
-        issuerChainName
+        pcsHeaderName
     );
 
     await sequelize.transaction(async() => {

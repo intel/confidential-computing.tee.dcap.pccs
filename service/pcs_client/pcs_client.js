@@ -231,11 +231,6 @@ export async function getTcb(type, fmspc, version, updateType) {
         uri = getTdxUrl(uri);
     }
 
-    if (global.PCS_VERSION === 4 && version === 3) {
-        // A little tricky here because we need to use the v3 PCS URL though v4 is configured
-        uri = uri.replace('/v4/', '/v3/');
-    }
-
     return doRequest(uri, options);
 }
 
@@ -264,11 +259,6 @@ export async function getEnclaveIdentity(enclaveId, version, updateType) {
         uri = `${Config.get('uri')}qve/identity`;
     } else if (enclaveId === Constants.TDQE_IDENTITY_ID) {
         uri = getTdxUrl(uri);
-    }
-
-    if (global.PCS_VERSION === 4 && version === 3) {
-        // A little tricky here because we need to use the v3 PCS URL though v4 is configured
-        uri = uri.replace('/v4/', '/v3/');
     }
 
     return doRequest(uri, options);
