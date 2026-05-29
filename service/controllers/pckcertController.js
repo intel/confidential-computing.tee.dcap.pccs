@@ -29,54 +29,19 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-import { pckcertService } from '../services/index.js';
-import PccsError from '../utils/PccsError.js';
+import { pckcertService, validatorService } from '../services/index.js';
 import PccsStatus from '../constants/pccs_status_code.js';
 import Constants from '../constants/index.js';
-import logger from '../utils/Logger.js';
 
 export async function getPckCert(req, res, next) {
-    const QEID_MAX_SIZE = 260;
-    const CPUSVN_SIZE = 32;
-    const PCESVN_SIZE = 4;
-    const PCEID_SIZE = 4;
-    const ENC_PPID_SIZE = 768;
 
     try {
-        let qeid = req.query.qeid;
-        let cpusvn = req.query.cpusvn;
-        let pcesvn = req.query.pcesvn;
-        let pceid = req.query.pceid;
-        let enc_ppid = req.query.encrypted_ppid;
-
         // validate request parameters
-        if (!qeid || !cpusvn || !pcesvn || !pceid) {
-            logger.error('Missing parameters for GET pckcert API.');
-            throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
-        }
-        if (
-            qeid.length > QEID_MAX_SIZE ||
-            cpusvn.length !== CPUSVN_SIZE ||
-            pcesvn.length !== PCESVN_SIZE ||
-            pceid.length !== PCEID_SIZE
-        ) {
-            logger.error('Invalid parameters for GET pckcert API.');
-            throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
-        }
-        if (enc_ppid?.length !== ENC_PPID_SIZE) {
-            logger.error('Invalid encrypted ppid for GET pckcert API.');
-            throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
-        }
-
-        // normalize the request parameters
-        qeid = qeid.toUpperCase();
-        cpusvn = cpusvn.toUpperCase();
-        pcesvn = pcesvn.toUpperCase();
-        pceid = pceid.toUpperCase();
-        if (enc_ppid) {
-            // enc_ppid can be null
-            enc_ppid = enc_ppid.toUpperCase();
-        }
+        const qeid = validatorService.validateAndNormalizeQeId(req.query.qeid);
+        const cpusvn = validatorService.validateAndNormalizeCpusvn(req.query.cpusvn);
+        const pcesvn = validatorService.validateAndNormalizePcesvn(req.query.pcesvn);
+        const pceid = validatorService.validateAndNormalizePceid(req.query.pceid);
+        const enc_ppid = validatorService.validateAndNormalizeEncryptedPpid(req.query.encrypted_ppid);
 
         // call service
         const pckcertJson = await pckcertService.getPckCert(

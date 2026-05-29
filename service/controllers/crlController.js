@@ -46,8 +46,8 @@ export async function getCrl(req, res, next) {
         }
 
         // validate uri
-        const found_root = uri.match(/https:\/\/([a-zA-Z0-9-]*certificates\.trustedservices\.intel\.com|certprx\.adsdcsp\.com)\/IntelSGXRootCA\..*/);
-        const found_intermediate = uri.match(/https:\/\/([a-zA-Z0-9-]*\.?api\.trustedservices\.intel\.com|[a-zA-Z0-9-]+\.az\.sgx(prod|np)\.adsdcsp\.com)\/sgx\/certification\/v([1-9][0-9]*)\/pckcrl\?.*/);
+        const found_root = uri.match(/^https:\/\/([a-zA-Z0-9-]*certificates\.trustedservices\.intel\.com|certprx\.adsdcsp\.com)\/IntelSGXRootCA\..*$/);
+        const found_intermediate = uri.match(/^https:\/\/([a-zA-Z0-9-]*\.?api\.trustedservices\.intel\.com|[a-zA-Z0-9-]+\.az\.sgx(prod|np)\.adsdcsp\.com)\/sgx\/certification\/v([1-9][0-9]*)\/pckcrl\?.*$/);
         if (!found_root && !found_intermediate) {
             logger.error(`uri is not valid : ${uri}`);
             throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);

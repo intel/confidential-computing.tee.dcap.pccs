@@ -29,7 +29,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-import { platformsRegService, platformsService } from '../services/index.js';
+import { platformsRegService, platformsService, validatorService } from '../services/index.js';
 import PccsError from '../utils/PccsError.js';
 import PccsStatus from '../constants/pccs_status_code.js';
 import Constants from '../constants/index.js';
@@ -38,16 +38,8 @@ import logger from '../utils/Logger.js';
 export async function postPlatforms(req, res, next) {
     try {
         // validate request parameters
-        let update = req.query.update;
-        if (update) {
-            update = update.toUpperCase();
-            if (![Constants.UPDATE_TYPE_STANDARD, Constants.UPDATE_TYPE_EARLY, Constants.UPDATE_TYPE_ALL].includes(update)) {
-                logger.error(`Invalid update type : ${update}`);
-                throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
-            }
-        } else {
-            update = Constants.UPDATE_TYPE_STANDARD;
-        }
+        const canBeAllUpdateType = true;
+        const update = validatorService.validateAndNormalizeUpdateType(req.query.update, canBeAllUpdateType);
 
         // call registration service
         await platformsRegService.registerPlatforms(req.body, update);
@@ -86,9 +78,9 @@ export async function getPlatforms(req, res, next) {
             }
             fmspc = fmspc
                 .substring(1, fmspc.length - 1)
-                .trim()
-                .toUpperCase();
-            const fmspc_arr = fmspc.length > 0 ? fmspc.split(',') : [];
+                .trim();
+            let fmspc_arr = fmspc.length > 0 ? fmspc.split(',') : [];
+            fmspc_arr = fmspc_arr.map(fmspc => validatorService.validateAndNormalizeFmspc(fmspc));
             platformsJson = await platformsService.getCachedPlatforms(fmspc_arr);
         }
 

@@ -29,21 +29,14 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-import { identityService } from '../services/index.js';
+import { identityService, validatorService } from '../services/index.js';
 import PccsStatus from '../constants/pccs_status_code.js';
 import Constants from '../constants/index.js';
 import * as appUtil from '../utils/apputil.js';
-import logger from '../utils/Logger.js';
-import PccsError from '../utils/PccsError.js';
 
 async function getEnclaveIdentity(req, res, next, enclave_id) {
     try {
-        const update_type = req.query.update ? req.query.update.toUpperCase() : Constants.UPDATE_TYPE_STANDARD;
-
-        if (update_type !== Constants.UPDATE_TYPE_STANDARD && update_type !== Constants.UPDATE_TYPE_EARLY) {
-            logger.error(`Invalid update type : ${update_type}`);
-            throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
-        }
+        const update_type = validatorService.validateAndNormalizeUpdateType(req.query.update);
 
         // call service
         const version = appUtil.getApiVersionFromUrl(req.originalUrl);

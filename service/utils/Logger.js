@@ -45,7 +45,8 @@ export const loggerNamespace = clshooked.createNamespace('pccs-logger-namespace'
 export function formatLogMessage(tokens, req, res) {
     const url = tokens.url(req, res);
     const status = tokens.status(req, res);
-    return `[URL=${parseAndModifyUrl(url)}] -> [Status=${status}]`;
+    const ip = tokens['remote-addr'](req, res);
+    return `[IP=${ip}][URL=${parseAndModifyUrl(url)}] -> [Status=${status}]`;
 }
 
 const options = {
