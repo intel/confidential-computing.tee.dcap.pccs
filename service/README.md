@@ -163,6 +163,11 @@ configuring the default QPL library (see [QPL README](https://github.com/intel/S
   The default setting is `"0 0 1 * * *"`, which means refresh at 1:00 AM every day.
 - **`UserTokenHash`** - Sha512 hash of the user token for the PCCS client user to register a platform. For example, PCK Cert ID retrieval tool will use the user token to send platform information to the PCCS.
 - **`AdminTokenHash`** - Sha512 hash of the administrator token for the PCCS administrator to perform a manual refresh of cached artifacts.
+- **`MaxRequestBodySize`** - Maximum allowed size of the request body. 2MB by default. You can use KB, MB, GB.
+- **`HeadersTimeoutSeconds`** - Maximum time in seconds to wait for the client to send complete HTTP headers. Default value is 10.
+- **`RequestTimeoutSeconds`** - Maximum time in seconds to wait for the client to send the entire request (headers + body). Default value is 15.
+- **`KeepAliveTimeoutSeconds`** - Maximum idle time in seconds on a keep-alive connection before it is closed. Default value is 60.
+
 
 > [!NOTE]
 > For Windows you need to set the UserTokenHash and AdminTokenHash manually. For example, you can calculate SHA512 hash using the following PowerShell snippet:

@@ -82,8 +82,6 @@ function configureMiddlewareAndRoutes() {
     app.use(morgan(formatLogMessage, { stream: logger.stream }));
     app.use(addRequestId);
     app.use(filterDuplicatedParams);
-    app.use(body_parser.urlencoded({ extended: true }));
-    app.use(body_parser.json({ limit: '200000kb' }));
 
     // authentication middleware for v3
     app.get('/sgx/certification/v3/platforms', auth.validateAdmin);
@@ -100,6 +98,11 @@ function configureMiddlewareAndRoutes() {
         app.use('/sgx/certification/v4/refresh', auth.validateAdmin);
         app.put('/sgx/certification/v4/appraisalpolicy', auth.validateAdmin);
     }
+
+    // body size limits
+    const maxRequestBodySize = Config.has('MaxRequestBodySize') ? Config.get('MaxRequestBodySize') : '2MB';
+    app.use(body_parser.urlencoded({ extended: true, limit: maxRequestBodySize }));
+    app.use(body_parser.json({ limit: maxRequestBodySize }));
 
     // router
     app.use('/sgx/certification/v3', sgxRouter);
@@ -156,6 +159,9 @@ function startHttpsServer() {
 
     try {
         const httpsServer = https.createServer(options, app);
+        httpsServer.requestTimeout = (Config.has('RequestTimeoutSeconds') ? Config.get('RequestTimeoutSeconds') : 15) * 1000;
+        httpsServer.headersTimeout = (Config.has('HeadersTimeoutSeconds') ? Config.get('HeadersTimeoutSeconds') : 10) * 1000;
+        httpsServer.keepAliveTimeout = (Config.has('KeepAliveTimeoutSeconds') ? Config.get('KeepAliveTimeoutSeconds') : 60) * 1000;
         httpsServer.listen(Config.get('HTTPS_PORT'), Config.get('hosts'), () => {
             logger.info(`HTTPS Server is running on: https://localhost:${Config.get('HTTPS_PORT')}`);
             app.emit('app_started');

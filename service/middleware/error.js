@@ -42,6 +42,11 @@ export function errorHandling(err, req, res, next) {
         res
             .status(PccsStatus.PCCS_STATUS_INVALID_REQ[0])
             .send(PccsStatus.PCCS_STATUS_INVALID_REQ[1]);
+    } else if (err.status === 413) {
+        logger.error(err.stack);
+        res
+            .status(PccsStatus.PCCS_STATUS_CONTENT_TOO_LARGE[0])
+            .send(PccsStatus.PCCS_STATUS_CONTENT_TOO_LARGE[1]);
     } else {
         logger.error(err.stack);
         res

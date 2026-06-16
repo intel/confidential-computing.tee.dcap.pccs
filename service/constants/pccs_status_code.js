@@ -43,6 +43,7 @@ define('PCCS_STATUS_SUCCESS', [200, 'Operation successful.']);
 define('PCCS_STATUS_INVALID_REQ', [400, 'Invalid request parameters.']);
 define('PCCS_STATUS_UNAUTHORIZED', [401, 'Authentication failed.']);
 define('PCCS_STATUS_NO_CACHE_DATA', [404, 'No cache data for this platform.']);
+define('PCCS_STATUS_CONTENT_TOO_LARGE', [413, 'Content too large.']);
 define('PCCS_STATUS_INTEGRITY_ERROR', [
     460,
     `The integrity of the data can't be verified.`,
