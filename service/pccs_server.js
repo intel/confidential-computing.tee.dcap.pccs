@@ -55,6 +55,7 @@ import {
 
 
 const app = express();
+app.disable('x-powered-by');
 
 async function initializeApp() {
     global.PCS_VERSION = appUtil.getApiVersionFromUrl(Config.get('uri'));

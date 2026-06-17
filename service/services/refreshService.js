@@ -50,16 +50,14 @@ import { selectBestPckCert } from '../pckCertSelection/pckCertSelection.js';
 
 // Refresh the enclave_identities table
 async function refreshEnclaveIdentities() {
-    let enclaveIdList;
     if (global.PCS_VERSION === 3) {
         return;
-    } else if (global.PCS_VERSION === 4) {
-        enclaveIdList = [
-            [Constants.QE_IDENTITY_ID, 4],
-            [Constants.QVE_IDENTITY_ID, 4],
-            [Constants.TDQE_IDENTITY_ID, 4],
-        ];
     }
+    const enclaveIdList = [
+        [Constants.QE_IDENTITY_ID, 4],
+        [Constants.QVE_IDENTITY_ID, 4],
+        [Constants.TDQE_IDENTITY_ID, 4],
+    ];
     const updateTypes = [Constants.UPDATE_TYPE_STANDARD, Constants.UPDATE_TYPE_EARLY];
     const pckServerResponses = await Promise.all(enclaveIdList
         .flatMap(enclaveId => updateTypes.map(updateType => [enclaveId, updateType]))

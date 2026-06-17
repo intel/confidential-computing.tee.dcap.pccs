@@ -116,7 +116,7 @@ export async function getPckCert(qeid, cpusvn, pcesvn, pceid, enc_ppid) {
                 pcesvn,
                 pceid,
                 enc_ppid,
-                platform ? platform.platform_manifest : ''
+                ''
             );
         } else {
             // Always treat presence of platform record as platform collateral is cached
