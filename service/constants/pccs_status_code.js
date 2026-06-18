@@ -56,6 +56,10 @@ define('PCCS_STATUS_CERTS_UNAVAILABLE', [
     462,
     'Certificates are not available for certain TCBs.',
 ]);
+define('PCCS_STATUS_V3_COLLATERAL_DEPRECATED', [
+    410,
+    'Collateral version 3 is deprecated and cannot be retrieved from PCS any longer.',
+]);
 define('PCCS_STATUS_INTERNAL_ERROR', [500, 'Internal server error occurred.']);
 define('PCCS_STATUS_SERVICE_UNAVAILABLE', [
     503,
