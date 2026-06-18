@@ -10,6 +10,7 @@ export default class ControllerTestContext {
         this.controllerName = controllerName;
         this.serviceStubs = {}; //override me
         this.otherStubs = {}; //override me
+        this.globalStubs = {}; //override me
     }
 
     next(err) {
@@ -21,7 +22,7 @@ export default class ControllerTestContext {
         return await esmock(this.controllerName, {
             ...this.otherStubs,
             '../services/index.js': services
-        });
+        }, this.globalStubs);
     }
 }
 

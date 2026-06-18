@@ -252,6 +252,11 @@ async function refreshRootcaCrl() {
         throw new PccsError(PccsStatus.PCCS_STATUS_INTERNAL_ERROR);
     }
 
+    if (!appUtil.isValidCrlUri(x509.cdpUri)) {
+        logger.error('Invalid CDP URI.');
+        throw new PccsError(PccsStatus.PCCS_STATUS_INTERNAL_ERROR);
+    }
+
     rootca.crl = await pcsClient.getFileFromUrl(x509.cdpUri);
 
     await pcsCertificatesDao.upsertPcsCertificates({
@@ -265,6 +270,10 @@ async function refreshCachedCrls() {
     const crlCaches = await crlCacheDao.getAllCrls();
     await Promise.all(crlCaches.map(async crlCache => {
         // refresh each crl
+        if (!appUtil.isValidCrlUri(crlCache.cdp_url)) {
+            logger.error('Invalid CDP URI.');
+            return false;
+        }
         const crl = await pcsClient.getFileFromUrl(crlCache.cdp_url);
         return await crlCacheDao.upsertCrl(crlCache.cdp_url, crl);
     }));

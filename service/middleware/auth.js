@@ -39,9 +39,10 @@ export function validateUser(req, res, next) {
     if (token) {
         const hash = Crypto.createHash('sha512');
         hash.update(token);
-        const userTokenHash = hash.digest('hex');
+        const userTokenBuffer = hash.digest();
+        const expectedTokenBuffer = Buffer.from(Config.get('UserTokenHash'), 'hex');
 
-        if (userTokenHash !== Config.get('UserTokenHash')) {
+        if (userTokenBuffer.length !== expectedTokenBuffer.length || !Crypto.timingSafeEqual(userTokenBuffer, expectedTokenBuffer)) {
             throw new PccsError(PccsStatus.PCCS_STATUS_UNAUTHORIZED);
         } else {
             next();
@@ -57,9 +58,10 @@ export function validateAdmin(req, res, next) {
     if (token) {
         const hash = Crypto.createHash('sha512');
         hash.update(token);
-        const admin_token_hash = hash.digest('hex');
+        const adminTokenBuffer = hash.digest();
+        const expectedTokenBuffer = Buffer.from(Config.get('AdminTokenHash'), 'hex');
 
-        if (admin_token_hash !== Config.get('AdminTokenHash')) {
+        if (adminTokenBuffer.length !== expectedTokenBuffer.length || !Crypto.timingSafeEqual(adminTokenBuffer, expectedTokenBuffer)) {
             throw new PccsError(PccsStatus.PCCS_STATUS_UNAUTHORIZED);
         } else {
             next();

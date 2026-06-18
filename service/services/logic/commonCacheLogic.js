@@ -402,6 +402,11 @@ export async function getRootCACrlFromPCS(rootcaParam) {
             throw new PccsError(PccsStatus.PCCS_STATUS_INTERNAL_ERROR);
         }
 
+        if (!appUtil.isValidCrlUri(x509.cdpUri)) {
+            logger.error('Invalid CDP URI.');
+            throw new PccsError(PccsStatus.PCCS_STATUS_INTERNAL_ERROR);
+        }
+
         rootca.crl = await pcsClient.getFileFromUrl(x509.cdpUri);
 
         await pcsCertificatesDao.upsertPcsCertificates({
@@ -415,6 +420,10 @@ export async function getRootCACrlFromPCS(rootcaParam) {
 }
 
 export async function getCrlFromPCS(uri) {
+    if (!appUtil.isValidCrlUri(uri)) {
+        logger.error('Invalid CRL URI.');
+        throw new PccsError(PccsStatus.PCCS_STATUS_INTERNAL_ERROR);
+    }
     const crl = await pcsClient.getFileFromUrl(uri);
 
     await crlCacheDao.upsertCrl(uri, crl);

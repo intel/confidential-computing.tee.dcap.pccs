@@ -28,6 +28,14 @@ class TestContext extends ControllerTestContext {
             '../services/platformsRegService.js': this.platformsRegService,
             '../services/platformsService.js':    this.platformsService
         };
+        this.sequelizeStub = {
+            transaction: sinon.stub().callsFake(async(callback) => await callback())
+        };
+        this.otherStubs = {
+            '../dao/models/index.js': {
+                sequelize: this.sequelizeStub
+            }
+        };
     }
 
     getPostRequest() {

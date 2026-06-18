@@ -34,6 +34,7 @@ import PccsError from '../utils/PccsError.js';
 import PccsStatus from '../constants/pccs_status_code.js';
 import Constants from '../constants/index.js';
 import logger from '../utils/Logger.js';
+import { sequelize } from '../dao/models/index.js';
 
 export async function postPlatforms(req, res, next) {
     try {
@@ -60,16 +61,20 @@ export async function getPlatforms(req, res, next) {
         let platformsJson;
         if (!req.query.source || req.query.source === 'reg') {
             // call registration service to get registered platforms
-            platformsJson = await platformsRegService.getRegisteredPlatforms();
-            await platformsRegService.deleteRegisteredPlatforms(
-                Constants.PLATF_REG_NEW
-            );
+            await sequelize.transaction(async() => {
+                platformsJson = await platformsRegService.getRegisteredPlatforms();
+                await platformsRegService.deleteRegisteredPlatforms(
+                    Constants.PLATF_REG_NEW
+                );
+            });
         } else if (req.query.source === 'reg_na') {
             // call registration service to get registered 'Not available' platforms
-            platformsJson = await platformsRegService.getRegisteredNaPlatforms();
-            await platformsRegService.deleteRegisteredPlatforms(
-                Constants.PLATF_REG_NOT_AVAILABLE
-            );
+            await sequelize.transaction(async() => {
+                platformsJson = await platformsRegService.getRegisteredNaPlatforms();
+                await platformsRegService.deleteRegisteredPlatforms(
+                    Constants.PLATF_REG_NOT_AVAILABLE
+                );
+            });
         } else {
             let fmspc = req.query.source;
             if (fmspc.length < 2 || fmspc[0] !== '[' || fmspc[fmspc.length - 1] !== ']') {
