@@ -336,7 +336,7 @@ export async function refreshCache(type, fmspc) {
 
     if (type === 'certs') {
         if (global.PCS_VERSION > 3) {
-            await sequelize.transaction(async () => {
+            await sequelize.transaction(async() => {
                 await refreshAllPckcerts(fmspc);
             });
         } else {
