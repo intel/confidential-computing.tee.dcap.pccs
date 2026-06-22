@@ -85,6 +85,8 @@ function configureMiddlewareAndRoutes() {
     app.use(filterDuplicatedParams);
 
     // authentication middleware for v3
+    auth.validateTokenHashes();
+
     app.get('/sgx/certification/v3/platforms', auth.validateAdmin);
     app.post('/sgx/certification/v3/platforms', auth.validateUser);
     app.use('/sgx/certification/v3/platformcollateral', auth.validateAdmin);
