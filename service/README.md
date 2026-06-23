@@ -112,6 +112,13 @@ To start the service and check its status, see section [Manage the PCCS service]
 4. If you want to run PCCS as a system service, run `sudo ./startup.sh`
 5. To start the service and check its status, see section [Manage the PCCS service](#manage-the-pccs-service)
 
+> [!NOTE]
+> The `install.sh` script can generate certificates for development purposes. It creates a dedicated, self-signed CA certificate (`ssl_key/ca.crt`) and a server leaf certificate (`ssl_key/file.crt`) signed by that CA. The CA certificate can be used with [PCCS Admin Tool](../PccsAdminTool) via the `--ca ssl_key/ca.crt` option, or by adding `ssl_key/ca.crt` to the trusted CA store used by the client/runtime.
+>
+> If this certificate isn't added to the system's trusted CAs, you need to set `"use_secure_cert": false` when configuring the default QPL library (see [QPL README](https://github.com/intel/SGXDataCenterAttestationPrimitives/blob/main/QuoteGeneration/qpl/README.md)). If the certificate is not provided to [PCCS Admin Tool](../PccsAdminTool) with `--ca` and is not trusted by the Admin Tool's default CA bundle, use `--no-pccs-cert-check` instead.
+>
+> As an alternative to passing `--ca` on every Admin Tool command, you can set the `REQUESTS_CA_BUNDLE` environment variable to a CA certificate bundle file or directory. `CURL_CA_BUNDLE` is also honoured as a fallback.
+
 ### Windows manual installation
 
 1. Put all the files and sub folders in this directory to your preferred place with right permissions set to launch a web service.
@@ -147,8 +154,9 @@ To start the service and check its status, see section [Manage the PCCS service]
 7. To start the service and check its status, see section [Manage the PCCS service](#manage-the-pccs-service)
 
 > [!NOTE]
-> If a self-signed insecure key and certificate are used, you need to set `"use_secure_cert": false` when
-configuring the default QPL library (see [QPL README](https://github.com/intel/SGXDataCenterAttestationPrimitives/blob/main/QuoteGeneration/qpl/README.md)).
+> If a self-signed insecure key and certificate are used for PCCS, you need to set `"use_secure_cert": false` when configuring the default QPL library (see [QPL README](https://github.com/intel/SGXDataCenterAttestationPrimitives/blob/main/QuoteGeneration/qpl/README.md)).
+> Additionally, the TLS certificate verification done by the [PCCS Admin Tool](../PccsAdminTool) will fail, because the tool uses the Python module `Requests`, which does not trust this self-signed certificate.
+> Optionally, use `--no-pccs-cert-check` to skip TLS certificate verification in this case.
 
 ## Configuration file *([`config/default.json`](./config/default.json))*
 
@@ -228,8 +236,12 @@ You can test the PCCS by running QuoteGeneration sample:
 1. Set `"use_secure_cert": false` in `/etc/sgx_default_qcnl.conf`.
 2. Build and run [QuoteGeneration sample](https://github.com/intel/SGXDataCenterAttestationPrimitives/tree/main/SampleCode/QuoteGenerationSample) and verify `CertType=5` quote is generated.
 
-For **Remote** service mode, you must use a formal key and certificate pair. You should also change `'hosts'` to `0.0.0.0` to accept remote connections. Also make sure the firewall is not blocking your listening port.
-In `/etc/sgx_default_qcnl.conf`, set `"use_secure_cert": true` (For Windows see the OS-specific note of [QPL README](https://github.com/intel/SGXDataCenterAttestationPrimitives/tree/main/QuoteGeneration/qpl#configuration)).
+For **Remote** service mode, you must use a formal key and certificate pair. The certificate must meet the following requirements:
+- The Certificate Authority (CA) certificate must have the `basicConstraints` extension with `CA:TRUE` and `keyUsage` extension with `keyCertSign`.
+- The leaf (server) certificate must have a Subject Alternative Name (SAN) matching the server address and `keyUsage` extension with `digitalSignature`.
+- The CA chain must be trusted by the clients connecting to the PCCS. For the QPL library, set `"use_secure_cert": true` in `/etc/sgx_default_qcnl.conf` (For Windows see the OS-specific note of [QPL README](https://github.com/intel/SGXDataCenterAttestationPrimitives/tree/main/QuoteGeneration/qpl#configuration)). For the [PCCS Admin Tool](../PccsAdminTool), the CA chain must either be trusted by the CA bundle used by Python Requests on that system, or provided using the `--ca` option.
+
+You should also change `'hosts'` to `0.0.0.0` to accept remote connections. Also make sure the firewall is not blocking your listening port.
 
 ## Manage the PCCS service
 
