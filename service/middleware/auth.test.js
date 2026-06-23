@@ -22,7 +22,7 @@ class TestContext {
     }
     async getTarget() {
         return await esmock('./auth.js', {
-            config: { 'default': this.Config },
+            'config':             { 'default': this.Config },
             '../utils/Logger.js': { 'default': this.logger }
         });
     }
@@ -90,7 +90,7 @@ describe('auth', () => {
     );
 
     describe('validateTokenHashes', () => {
-        it('should not warn when both token hashes are valid', async () => {
+        it('should not warn when both token hashes are valid', async() => {
             const c = new TestContext();
             const target = await c.getTarget();
 
@@ -99,7 +99,7 @@ describe('auth', () => {
             expect(c.logger.warn.notCalled).to.be.true;
         });
 
-        it('should warn when UserTokenHash is invalid', async () => {
+        it('should warn when UserTokenHash is invalid', async() => {
             const c = new TestContext();
             c.Config.set('UserTokenHash', 'invalid');
             const target = await c.getTarget();
@@ -111,7 +111,7 @@ describe('auth', () => {
             expect(c.logger.warn.callCount).to.equal(2);
         });
 
-        it('should warn when AdminTokenHash is invalid', async () => {
+        it('should warn when AdminTokenHash is invalid', async() => {
             const c = new TestContext();
             c.Config.set('AdminTokenHash', 'invalid');
             const target = await c.getTarget();
@@ -123,7 +123,7 @@ describe('auth', () => {
             expect(c.logger.warn.callCount).to.equal(2);
         });
 
-        it('should warn about both hashes when both are invalid', async () => {
+        it('should warn about both hashes when both are invalid', async() => {
             const c = new TestContext();
             c.Config.set('UserTokenHash', 'invalid');
             c.Config.set('AdminTokenHash', 'invalid');
@@ -137,7 +137,7 @@ describe('auth', () => {
             expect(c.logger.warn.callCount).to.equal(3);
         });
 
-        it('should warn when UserTokenHash is empty', async () => {
+        it('should warn when UserTokenHash is empty', async() => {
             const c = new TestContext();
             c.Config.set('UserTokenHash', '');
             const target = await c.getTarget();
@@ -149,7 +149,7 @@ describe('auth', () => {
             expect(c.logger.warn.callCount).to.equal(2);
         });
 
-        it('should warn when AdminTokenHash is empty', async () => {
+        it('should warn when AdminTokenHash is empty', async() => {
             const c = new TestContext();
             c.Config.set('AdminTokenHash', '');
             const target = await c.getTarget();
@@ -161,7 +161,7 @@ describe('auth', () => {
             expect(c.logger.warn.callCount).to.equal(2);
         });
 
-        it('should warn about both hashes when both are empty', async () => {
+        it('should warn about both hashes when both are empty', async() => {
             const c = new TestContext();
             c.Config.set('UserTokenHash', '');
             c.Config.set('AdminTokenHash', '');
@@ -175,7 +175,7 @@ describe('auth', () => {
             expect(c.logger.warn.callCount).to.equal(3);
         });
 
-        it('should warn about both hashes when fields do not exist', async () => {
+        it('should warn about both hashes when fields do not exist', async() => {
             const c = new TestContext();
             c.Config = new Map();
             const target = await c.getTarget();
