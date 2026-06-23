@@ -56,9 +56,9 @@ define('PCCS_STATUS_CERTS_UNAVAILABLE', [
     462,
     'Certificates are not available for certain TCBs.',
 ]);
-define('PCCS_STATUS_V3_COLLATERAL_DEPRECATED', [
+define('PCCS_STATUS_PCS_V3_REACHED_EOL', [
     410,
-    'Collateral version 3 is deprecated and cannot be retrieved from PCS any longer.',
+    'The Intel PCS API version 3 reached planned EOL. Accordingly, collateral from this API version cannot be retrieved any longer.',
 ]);
 define('PCCS_STATUS_INTERNAL_ERROR', [500, 'Internal server error occurred.']);
 define('PCCS_STATUS_SERVICE_UNAVAILABLE', [

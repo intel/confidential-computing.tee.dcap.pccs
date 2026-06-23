@@ -105,7 +105,7 @@ export function parseAndModifyUrl(url) {
 async function doRequest(url, options) {
     try {
         if (url.indexOf('/v3/') >= 0) {
-            throw new PccsError(PccsStatus.PCCS_STATUS_V3_COLLATERAL_DEPRECATED);
+            throw new PccsError(PccsStatus.PCCS_STATUS_PCS_V3_REACHED_EOL);
         }
 
         // check for early access portal
@@ -142,7 +142,7 @@ async function doRequest(url, options) {
 
         return response;
     } catch (err) {
-        if (err.status === PccsStatus.PCCS_STATUS_V3_COLLATERAL_DEPRECATED[0]) {
+        if (err.status === PccsStatus.PCCS_STATUS_PCS_V3_REACHED_EOL[0]) {
             throw err;
         }
         logger.error(err);
@@ -218,7 +218,7 @@ export async function getPckCrl(ca) {
 
 export async function getTcb(type, fmspc, version, updateType) {
     if (version === 3) {
-        throw new PccsError(PccsStatus.PCCS_STATUS_V3_COLLATERAL_DEPRECATED);
+        throw new PccsError(PccsStatus.PCCS_STATUS_PCS_V3_REACHED_EOL);
     }
     if (type !== Constants.PROD_TYPE_SGX && type !== Constants.PROD_TYPE_TDX) {
         throw new PccsError(PccsStatus.PCCS_STATUS_INTERNAL_ERROR);
@@ -247,7 +247,7 @@ export async function getTcb(type, fmspc, version, updateType) {
 
 export async function getEnclaveIdentity(enclaveId, version, updateType) {
     if (version === 3) {
-        throw new PccsError(PccsStatus.PCCS_STATUS_V3_COLLATERAL_DEPRECATED);
+        throw new PccsError(PccsStatus.PCCS_STATUS_PCS_V3_REACHED_EOL);
     }
     if (
         enclaveId !== Constants.QE_IDENTITY_ID &&
