@@ -50,16 +50,15 @@ import { selectBestPckCert } from '../pckCertSelection/pckCertSelection.js';
 
 // Refresh the enclave_identities table
 async function refreshEnclaveIdentities() {
-    let enclaveIdList;
     if (global.PCS_VERSION === 3) {
+        logger.warn('PCS API version 3 is no longer available. Enclave Identities downloaded using API version 3 will not be refreshed.');
         return;
-    } else if (global.PCS_VERSION === 4) {
-        enclaveIdList = [
-            [Constants.QE_IDENTITY_ID, 4],
-            [Constants.QVE_IDENTITY_ID, 4],
-            [Constants.TDQE_IDENTITY_ID, 4],
-        ];
     }
+    const enclaveIdList = [
+        [Constants.QE_IDENTITY_ID, 4],
+        [Constants.QVE_IDENTITY_ID, 4],
+        [Constants.TDQE_IDENTITY_ID, 4],
+    ];
     const updateTypes = [Constants.UPDATE_TYPE_STANDARD, Constants.UPDATE_TYPE_EARLY];
     const pckServerResponses = await Promise.all(enclaveIdList
         .flatMap(enclaveId => updateTypes.map(updateType => [enclaveId, updateType]))
@@ -254,6 +253,11 @@ async function refreshRootcaCrl() {
         throw new PccsError(PccsStatus.PCCS_STATUS_INTERNAL_ERROR);
     }
 
+    if (!appUtil.isValidCrlUri(x509.cdpUri)) {
+        logger.error('Invalid CDP URI.');
+        throw new PccsError(PccsStatus.PCCS_STATUS_INTERNAL_ERROR);
+    }
+
     rootca.crl = await pcsClient.getFileFromUrl(x509.cdpUri);
 
     await pcsCertificatesDao.upsertPcsCertificates({
@@ -267,6 +271,10 @@ async function refreshCachedCrls() {
     const crlCaches = await crlCacheDao.getAllCrls();
     await Promise.all(crlCaches.map(async crlCache => {
         // refresh each crl
+        if (!appUtil.isValidCrlUri(crlCache.cdp_url)) {
+            logger.error('Invalid CDP URI.');
+            return false;
+        }
         const crl = await pcsClient.getFileFromUrl(crlCache.cdp_url);
         return await crlCacheDao.upsertCrl(crlCache.cdp_url, crl);
     }));
@@ -274,6 +282,10 @@ async function refreshCachedCrls() {
 
 // Refresh the TCB info for the specified fmspc value
 async function refreshOneTcb(fmspc, type, version, updateType) {
+    if (version === 3) {
+        return;
+    }
+
     const pckServerRes = await pcsClient.getTcb(type, fmspc, version, updateType);
     if (pckServerRes.statusCode === Constants.HTTP_SUCCESS) {
         // Then refresh cache DB
@@ -303,7 +315,18 @@ async function refreshAllTcbs() {
     await fmspcTcbDao.deleteInvalidTcbs();
 
     const tcbs = await fmspcTcbDao.getAllTcbs();
-    await Promise.all(tcbs.map(async tcb => refreshOneTcb(tcb.fmspc, tcb.type, tcb.version, tcb.update_type)));
+    if (tcbs.findIndex(tcb => tcb.version === 3) > -1) {
+        logger.warn('PCS API version 3 is no longer available. TCB Info collateral version 3 is deprecated and will not be refreshed.');
+        logger.warn('');
+        logger.warn('Consider removal of collateral version 3 with SQL statements such as:');
+        logger.warn('DELETE FROM enclave_identities WHERE version = 3;');
+        logger.warn('DELETE FROM fmspc_tcbs WHERE version = 3;');
+        logger.warn('');
+    }
+
+    await Promise.all(tcbs
+        .filter(tcb => tcb.version > 3)
+        .map(async tcb => refreshOneTcb(tcb.fmspc, tcb.type, tcb.version, tcb.update_type)));
 }
 
 export async function refreshCache(type, fmspc) {
@@ -312,14 +335,25 @@ export async function refreshCache(type, fmspc) {
     }
 
     if (type === 'certs') {
-        await sequelize.transaction(async() => {
-            await refreshAllPckcerts(fmspc);
-        });
+        if (global.PCS_VERSION > 3) {
+            await sequelize.transaction(async() => {
+                await refreshAllPckcerts(fmspc);
+            });
+        } else {
+            logger.warn('PCS API version 3 is no longer available. PCK certs downloaded using API version 3 will not be refreshed.');
+        }
     } else {
+        if (global.PCS_VERSION > 3) {
+            await sequelize.transaction(async() => {
+                await refreshPckCrls();
+                await refreshAllTcbs();
+                await refreshEnclaveIdentities();
+            });
+        } else {
+            logger.warn('PCS API version 3 is no longer available. PCK CRLs, TCB Infos and Enclave Identities downloaded using API version 3 will not be refreshed.');
+        }
+
         await sequelize.transaction(async() => {
-            await refreshPckCrls();
-            await refreshAllTcbs();
-            await refreshEnclaveIdentities();
             await refreshRootcaCrl();
             await refreshCachedCrls();
         });
@@ -344,10 +378,17 @@ export async function scheduledRefresh() {
             return;
         }
 
+        if (global.PCS_VERSION > 3) {
+            await sequelize.transaction(async() => {
+                await refreshPckCrls();
+                await refreshAllTcbs();
+                await refreshEnclaveIdentities();
+            });
+        } else {
+            logger.warn('PCS API version 3 is no longer available. PCK CRLs, TCB Infos and Enclave Identities downloaded using API version 3 will not be refreshed.');
+        }
+
         await sequelize.transaction(async() => {
-            await refreshPckCrls();
-            await refreshAllTcbs();
-            await refreshEnclaveIdentities();
             await refreshRootcaCrl();
             await refreshCachedCrls();
         });

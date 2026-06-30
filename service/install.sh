@@ -98,11 +98,11 @@ promptDbMigration
 echo "Check proxy server configuration for internet connection... "
 if [ "$http_proxy" == "" ]
 then
-    read -p "Enter your http proxy server address, e.g. http://proxy-server:port (Press ENTER if there is no proxy server) :" http_proxy 
+    read -p "Enter your http proxy server address, e.g. http://proxy-server:port (Press ENTER if there is no proxy server) :" http_proxy
 fi
 if [ "$https_proxy" == "" ]
 then
-    read -p "Enter your https proxy server address, e.g. http://proxy-server:port (Press ENTER if there is no proxy server) :" https_proxy 
+    read -p "Enter your https proxy server address, e.g. http://proxy-server:port (Press ENTER if there is no proxy server) :" https_proxy
 fi
 
 cd `dirname $0`
@@ -174,11 +174,11 @@ fi
 
 while :
 do
-    read -p "Do you want to configure PCCS now? (Y/N) :" doconfig 
-    if [[ "$doconfig" == "Y" || "$doconfig" == "y" ]] 
+    read -p "Do you want to configure PCCS now? (Y/N) :" doconfig
+    if [[ "$doconfig" == "Y" || "$doconfig" == "y" ]]
     then
         break
-    elif [[ "$doconfig" == "N" || "$doconfig" == "n" ]] 
+    elif [[ "$doconfig" == "N" || "$doconfig" == "n" ]]
     then
         exit 0
     elif [ ! -t 0 ] # non-interactive terminal
@@ -193,7 +193,7 @@ done
 while :
 do
     read -p "Set HTTPS listening port [8081] (1024-65535) :" port
-    if [ -z $port ]; then 
+    if [ -z $port ]; then
         port=8081
         break
     elif [[ $port -lt 1024  ||  $port -gt 65535 ]] ; then
@@ -207,23 +207,23 @@ done
 #Ask whether service should be available locally or externally
 while :
 do
-    read -p "Set the PCCS service to accept local connections only? [Y] (Y/N) :" local_only 
-    if [[ -z $local_only  || "$local_only" == "Y" || "$local_only" == "y" ]] 
+    read -p "Set the PCCS service to accept local connections only? [Y] (Y/N) :" local_only
+    if [[ -z $local_only  || "$local_only" == "Y" || "$local_only" == "y" ]]
     then
         local_only="Y"
         sed "/\"hosts\"*/c\ \ \ \ \"hosts\" \: \"127.0.0.1\"," -i ${configFile}
         break
-    elif [[ "$local_only" == "N" || "$local_only" == "n" ]] 
+    elif [[ "$local_only" == "N" || "$local_only" == "n" ]]
     then
         sed "/\"hosts\"*/c\ \ \ \ \"hosts\" \: \"0.0.0.0\"," -i ${configFile}
         break
     fi
 done
 
-#Ask for API key 
+#Ask for API key
 while :
 do
-    read -p "Set your Intel PCS API key (Press ENTER to skip) :" apikey 
+    read -p "Set your Intel PCS API key (Press ENTER to skip) :" apikey
     if [ -z $apikey ]
     then
         echo -e "${YELLOW}You didn't set Intel PCS API key. You can set it later in config/default.json. ${NC} "
@@ -244,13 +244,13 @@ fi
 #Ask for CachingFillMode
 while :
 do
-    read -p "Choose caching fill method : [LAZY] (LAZY/OFFLINE/REQ) :" caching_mode 
-    if [[ -z $caching_mode  || "$caching_mode" == "LAZY" ]] 
+    read -p "Choose caching fill method : [LAZY] (LAZY/OFFLINE/REQ) :" caching_mode
+    if [[ -z $caching_mode  || "$caching_mode" == "LAZY" ]]
     then
         caching_mode="LAZY"
         sed "/\"CachingFillMode\"*/c\ \ \ \ \"CachingFillMode\" \: \"${caching_mode}\"," -i ${configFile}
         break
-    elif [[ "$caching_mode" == "OFFLINE" || "$caching_mode" == "REQ" ]] 
+    elif [[ "$caching_mode" == "OFFLINE" || "$caching_mode" == "REQ" ]]
     then
         sed "/\"CachingFillMode\"*/c\ \ \ \ \"CachingFillMode\" \: \"${caching_mode}\"," -i ${configFile}
         break
@@ -275,7 +275,7 @@ do
             exit 1
         fi
     done
-    
+
     # check password strength
     result="$(cracklib-check <<<"$admintoken1")"
     okay="$(awk -F': ' '{ print $NF}' <<<"$result")"
@@ -376,22 +376,124 @@ do
 done
 
 if command -v openssl > /dev/null 2>&1
-then 
+then
     genkey=""
     while [ "$genkey" == "" ]
     do
-        read -p "Do you want to generate insecure HTTPS key and cert for PCCS service? [Y] (Y/N) :" genkey 
-        if [[ -z "$genkey" ||  "$genkey" == "Y" || "$genkey" == "y" ]] 
+        read -p "Do you want to generate a self-signed CA certificate and an HTTPS certificate for PCCS? (for development/testing only) [Y] (Y/N) :" genkey
+        if [[ -z "$genkey" ||  "$genkey" == "Y" || "$genkey" == "y" ]]
         then
             if [ ! -d ssl_key  ];then
                 mkdir ssl_key
             fi
+
+            # Generate a dedicated CA key (with restricted permissions) and a self-signed CA certificate (valid 10 years).
+            # This CA is used solely to sign the PCCS server certificate below.
+            # The CA certificate (ssl_key/ca.crt) is what clients must trust, e.g. via pccsadmin --ca ssl_key/ca.crt, to verify the PCCS server's identity.
+            openssl genrsa -out ssl_key/ca.key 2048
+            chmod 600 ssl_key/ca.key
+            openssl req -new -x509 -days 3650 -key ssl_key/ca.key \
+                -out ssl_key/ca.crt \
+                -subj "/CN=PCCS CA (self-signed)" \
+                -addext "basicConstraints=critical,CA:TRUE" \
+                -addext "keyUsage=critical,keyCertSign,cRLSign"
+
+            # Prompt for the hostname or IP the server will be reachable at.
+            # This value is placed in the Subject Alternative Name (SAN) extension, which TLS clients use to verify the server identity.
+            read -p "Set PCCS server address for the HTTPS certificate [localhost] :" san_value
+            if [ -z "$san_value" ]; then
+                san_value="localhost"
+            fi
+
+            # Validate san_value contains only characters safe for embedding in a CNF file.
+            # Brackets are allowed to support bracketed IPv6 (e.g. [::1]).
+            # This prevents newline or special-character injection into pccs_cert_ext.cnf.
+            if [[ ! "$san_value" =~ ^[]a-zA-Z0-9.:_[-]+$ ]]; then
+                echo "Error: Invalid server address '$san_value'."
+                echo "Only alphanumeric characters, dots, colons, brackets, hyphens, and underscores are allowed."
+                exit 1
+            fi
+
+            # Reject all host:port forms. Certificate SANs contain only a hostname or IP - never a port.
+            # Two patterns cover all cases:
+            #   [IPv6]:port  — bracketed IPv6 literal with port suffix, e.g. [::1]:8081
+            #   host:port    — hostname or IPv4 with port; exactly one colon since valid IPv6 has >=2 colons and IPv4 has none
+            if [[ "$san_value" =~ ^\[.*\]:[0-9]+$ ]] || [[ "$san_value" =~ ^[^:]*:[^:]*$ ]]; then
+                echo "Error: '$san_value' contains a port number. Certificate SANs do not include ports."
+                echo "Please provide only the hostname or IP address."
+                exit 1
+            fi
+
+            # Normalize bracketed IPv6 to bare form, e.g. [::1] --> ::1.
+            if [[ "$san_value" =~ ^\[.*\]$ ]]; then
+                san_value="${san_value:1:${#san_value}-2}"
+            fi
+
+            # Detect and validate the address type.
+            # IPv6: at least two colons, only hex digits and colons.
+            if [[ "$san_value" =~ :.*: ]]; then
+                if [[ "$san_value" =~ ^[0-9a-fA-F:]+$ ]]; then
+                    san_type="IP"
+                else
+                    echo "Error: '$san_value' looks like an IPv6 address but contains invalid characters."
+                    echo "IPv6 addresses must use only hex digits (0-9, a-f) and colons."
+                    exit 1
+                fi
+
+            # IPv4: four dot-separated decimal fields, each in [0, 255].
+            elif [[ "$san_value" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
+                _valid_ipv4=true
+                IFS='.' read -ra _octets <<< "$san_value"
+                for _octet in "${_octets[@]}"; do
+                    if (( _octet > 255 )); then
+                        _valid_ipv4=false
+                        break
+                    fi
+                done
+                if [[ "$_valid_ipv4" == "true" ]]; then
+                    san_type="IP"
+                else
+                    echo "Error: '$san_value' looks like an IPv4 address but has an octet out of range [0-255]."
+                    exit 1
+                fi
+
+            # Otherwise treat as a DNS hostname.
+            else
+                san_type="DNS"
+            fi
+
+            # Write a temporary OpenSSL extensions config for the server certificate:
+            #   subjectAltName  - hostname/IP that the cert is valid for
+            #   basicConstraints=CA:FALSE - marks this as a leaf cert, not a CA
+            #   keyUsage=digitalSignature - restricts the key to TLS handshake signing
+            cat > ssl_key/pccs_cert_ext.cnf <<EOF
+[extensions]
+subjectAltName=${san_type}:${san_value}
+basicConstraints=critical,CA:FALSE
+keyUsage=critical,digitalSignature
+EOF
+
+            # Register a trap to remove OpenSSL extensions config if the script exits unexpectedly.
+            trap 'rm -f ssl_key/pccs_cert_ext.cnf' EXIT
+
+            # Generate the server's private key.
             openssl genrsa -out ssl_key/private.pem 2048
-            # Since this is an insecure self-signed certificate, the common name (CN)/subject customization does not play a role.
-            openssl req -new -key ssl_key/private.pem -out ssl_key/csr.pem -subj "/CN=PCCS Server (self-signed certificate)"            
-            openssl x509 -req -days 365 -in ssl_key/csr.pem -signkey ssl_key/private.pem -out ssl_key/file.crt
+
+            # Create a Certificate Signing Request (CSR) from the server's private key.
+            openssl req -new -key ssl_key/private.pem -out ssl_key/csr.pem -subj "/CN=PCCS Server"
+
+            # Have the CA sign the CSR, producing the server certificate (valid 1 year) with the extensions above.
+            # The resulting ssl_key/file.crt is the certificate the PCCS presents to clients.
+            # It is signed by ssl_key/ca.crt, so clients that trust the CA will accept the server certificate.
+            openssl x509 -req -days 365 -in ssl_key/csr.pem \
+                -CA ssl_key/ca.crt -CAkey ssl_key/ca.key -CAcreateserial \
+                -out ssl_key/file.crt -extfile ssl_key/pccs_cert_ext.cnf -extensions extensions
+
+            # Remove temporary files: the extensions config and the CA serial tracking file.
+            rm -f ssl_key/pccs_cert_ext.cnf ssl_key/ca.srl
+            trap - EXIT
             break
-        elif [[ "$genkey" == "N" || "$genkey" == "n" ]] 
+        elif [[ "$genkey" == "N" || "$genkey" == "n" ]]
         then
             break
         else

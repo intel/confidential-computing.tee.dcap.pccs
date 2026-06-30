@@ -38,10 +38,7 @@ import logger from '../utils/Logger.js';
 export async function getPckCrl(req, res, next) {
     try {
         // validate request parameters
-        let ca = req.query.ca;
-        if (ca) {
-            ca = ca.toUpperCase();
-        }
+        const ca = req.query.ca?.toUpperCase();
         if (ca !== Constants.CA_PROCESSOR && ca !== Constants.CA_PLATFORM) {
             logger.error(`ca is not valid : ${ca}`);
             throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);

@@ -33,8 +33,10 @@
 import argparse
 import requests
 import os
+import ssl
 import sys
 import json
+import urllib3
 from lib.intelsgx.credential import Credentials
 
 PCCS_SERVICE_URL = 'https://localhost:8081/sgx/certification/v4'
@@ -45,8 +47,13 @@ def main():
     #parser.add_argument('action', help='Choose your action')
     subparsers = parser.add_subparsers(dest="command")
 
+    # Parent parser for common TLS options
+    tls_parent = argparse.ArgumentParser(add_help=False)
+    tls_verify_group = tls_parent.add_mutually_exclusive_group()
+    tls_verify_group.add_argument("--no-pccs-cert-check", action="store_true", help="Disable verification of PCCS' TLS certificate (not recommended).")
+    tls_verify_group.add_argument("--ca", type=str, help="Path to a CA certificate file, CA certificate bundle file, or a directory of certificates pre-processed by c_rehash, used to verify the PCCS' certificate.")
     #  subparser for get
-    parser_get = subparsers.add_parser('get', formatter_class=argparse.RawTextHelpFormatter)
+    parser_get = subparsers.add_parser('get', parents=[tls_parent], formatter_class=argparse.RawTextHelpFormatter)
     # add optional arguments for get
     parser_get.add_argument("-u", "--url", help="The URL of the PCCS's GET platforms API; default: https://localhost:8081/sgx/certification/v4/platforms")
     parser_get.add_argument("-o", "--output_file", help="The output file name for platform list; default: platform_list.json")
@@ -60,9 +67,9 @@ def main():
     description_put = (
     "This put command supports the following formats([] means optional):\n"
     "1. pccsadmin put [-u https://localhost:8081/sgx/certification/v4/platformcollateral] [-i collateral_file(*.json)]\n"
-    "2. pccsamdin put -u https://localhost:8081/sgx/certification/v4/appraisalpolicy [-d] -f fmspc -i policy_file(*.jwt)"
+    "2. pccsadmin put -u https://localhost:8081/sgx/certification/v4/appraisalpolicy [-d] -f fmspc -i policy_file(*.jwt)"
     )
-    parser_put = subparsers.add_parser('put', description=description_put, formatter_class=argparse.RawTextHelpFormatter)
+    parser_put = subparsers.add_parser('put', parents=[tls_parent], description=description_put, formatter_class=argparse.RawTextHelpFormatter)
     # add optional arguments for put
     parser_put.add_argument("-u", "--url", help="The URL of the PCCS's API; default: https://localhost:8081/sgx/certification/v4/platformcollateral")
     parser_put.add_argument("-i", "--input_file", help="The input file name for platform collaterals or appraisal policy;\
@@ -73,7 +80,7 @@ def main():
     parser_put.set_defaults(func=pccs_put)
 
     #  subparser for refresh
-    parser_refresh = subparsers.add_parser('refresh')
+    parser_refresh = subparsers.add_parser('refresh', parents=[tls_parent])
     # add optional arguments for refresh
     parser_refresh.add_argument("-u", "--url", help="The URL of the PCCS's refresh API; default: https://localhost:8081/sgx/certification/v4/refresh")
     parser_refresh.add_argument("-f", "--fmspc", help="Only refresh certificates for specified FMSPCs. Format: [FMSPC1, FMSPC2, ..., FMSPCn]")
@@ -90,6 +97,14 @@ def main():
         if not args.fmspc or not args.input_file:
             parser.error("For putting appraisal policy, -f/--fmspc and -i/--input_file are mandatory.")
 
+    # Check if no-pccs-cert-check flag was provided.
+    if getattr(args, 'no_pccs_cert_check', False):
+        # Inform the user that PCCS connections are unauthenticated for this session.
+        print("WARNING: TLS certificate verification for PCCS connections is disabled. Connections are not authenticated.")
+        
+        # With verify=False, urllib3 would emit an InsecureRequestWarning to stderr on every individual HTTP request, producing repeated and noisy output.
+        # The user has already explicitly opted in via --no-pccs-cert-check, so suppress the per-request warnings and replace them with the single notice above.
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
     args.func(args)
 
 class Utils:
@@ -128,10 +143,40 @@ class PccsClient:
     USER_AGENT = 'pccsadmin/0.1'
     CONTENT_TYPE = 'application/json'
     FMSPC = None
-    
+
     def __init__(self, credentials, args):
         self.credentials = credentials
         self.args = args
+
+    def _get_tls_verify(self):
+        """Return the value to pass as `verify=` to requests.
+
+        - --no-pccs-cert-check: returns False (i.e., disables certificate verification).
+        - --ca <path>: validates the path is a loadable CA certificate file, CA certificate bundle file, or c_rehash certificate directory, then returns the path (i.e., requests module uses it instead of the system store).
+        - neither: returns True (i.e., requests module verifies against its default CA bundle).
+        """
+        if getattr(self.args, 'no_pccs_cert_check', False):
+            return False
+        if getattr(self.args, 'ca', None):
+            cert_path = self.args.ca
+            try:
+                if os.path.isdir(cert_path):
+                    ssl.create_default_context(capath=cert_path)
+                else:
+                    ssl.create_default_context(cafile=cert_path)
+            except FileNotFoundError:
+                raise FileNotFoundError(
+                    "TLS certificate not found at %s." % cert_path
+                )
+            except ssl.SSLError as e:
+                raise ValueError(
+                    "TLS certificate found at '%s' is invalid: %s" % (cert_path, e)
+                ) from e
+            print("Using '%s' for PCCS TLS certificate verification." % cert_path)
+            return cert_path
+        
+        # Use Requests module's default CA bundle.
+        return True
 
     def get_platforms(self):
         try:
@@ -143,7 +188,7 @@ class PccsClient:
             token = self.credentials.get_admin_token()
             headers = {'user-agent': self.USER_AGENT, 'admin-token': token}
             params = {}
-            response = requests.get(url=url, headers=headers, params=params, verify=False)
+            response = requests.get(url=url, headers=headers, params=params, verify=self._get_tls_verify())
 
             if response.status_code == 200:
                 self._write_output_file(output_file, response)
@@ -159,6 +204,8 @@ class PccsClient:
             else:
                 self._handle_error(response)
 
+        except requests.exceptions.SSLError as e:
+            self._handle_pccs_ssl_error(e, getattr(self.args, 'ca', None))
         except Exception as e:
             print(e)
 
@@ -179,7 +226,7 @@ class PccsClient:
                 data = inputfile.read()
 
             if url.endswith("/platformcollateral"):
-                response = requests.put(url=url, data=data, headers=headers, params=params, verify=False)
+                response = requests.put(url=url, data=data, headers=headers, params=params, verify=self._get_tls_verify())
 
                 if response.status_code == 200:
                     print("Collaterals uploaded successfully.")
@@ -202,7 +249,7 @@ class PccsClient:
                 }
                 # Convert the dictionary to a JSON string
                 data_str = json.dumps(appraisal_policy)
-                response = requests.put(url=url, data=data_str, headers=headers, params=params, verify=False)
+                response = requests.put(url=url, data=data_str, headers=headers, params=params, verify=self._get_tls_verify())
                 if response.status_code == 200:
                     print("Policy uploaded successfully with policy ID :" + response.text)
                 elif response.status_code == 401:  # Authentication error
@@ -219,6 +266,8 @@ class PccsClient:
             else:
                 print("Invalid URL.")
 
+        except requests.exceptions.SSLError as e:
+            self._handle_pccs_ssl_error(e, getattr(self.args, 'ca', None))
         except Exception as e:
             print(e)
 
@@ -240,8 +289,7 @@ class PccsClient:
             elif fmspc != None:
                 params = {'type': 'certs',
                         'fmspc': fmspc}
-                
-            response = requests.post(url=url, headers=headers, params=params, verify=False)
+            response = requests.post(url=url, headers=headers, params=params, verify=self._get_tls_verify())
             if response.status_code == 200:
                 print("The cache database was refreshed successfully.")
             elif response.status_code == 401:  # Authentication error
@@ -256,8 +304,37 @@ class PccsClient:
             else:
                 self._handle_error(response)
 
+        except requests.exceptions.SSLError as e:
+            self._handle_pccs_ssl_error(e, getattr(self.args, 'ca', None))
         except Exception as e:
             print(e)
+
+    @staticmethod
+    def _handle_pccs_ssl_error(e, ca_path=None):
+        # Check if the root cause is specifically a certificate verification error for the PCCS connection.
+        # Walk both __cause__ (explicit: raise X from Y) and __context__ (implicit chaining).
+        # Both must be followed because requests.exceptions.SSLError sets __cause__=None and attaches the underlying urllib3 exception via __context__ only. 
+        # The ssl.SSLCertVerificationError is then reachable through __context__ deeper in the chain.
+        # A set of visited exception ids guards against cycles.
+        cause = e
+        seen = set()
+        while cause is not None and id(cause) not in seen:
+            seen.add(id(cause))
+            if isinstance(cause, ssl.SSLCertVerificationError):
+                print("TLS certificate verification failed for PCCS connection: %s" % e)
+                if ca_path:
+                    print("The CA path '%s' was used but did not verify the PCCS server certificate." % ca_path)
+                    print("Possible causes: wrong CA certificate, incomplete chain, or the PCCS server certificate was replaced.")
+                    print("You may use --no-pccs-cert-check to skip TLS certificate verification (not recommended).")
+                else:
+                    print("Note: TLS certificate verification for PCCS connections is now enabled by default.")
+                    print("If you were previously connecting without TLS flags, the PCCS certificate must now be trusted by the Requests Module default CA bundle, or you must supply one of:")
+                    print("  --ca <path>           Specify a CA certificate file, CA certificate bundle file, or c_rehash certificate directory for verification.")
+                    print("  --no-pccs-cert-check  Disable verification of PCCS' TLS certificate (not recommended).")
+                return
+            cause = getattr(cause, '__cause__', None) or getattr(cause, '__context__', None)
+        # Not a cert verification error - just print the generic SSL error
+        print(e)
 
     @staticmethod
     def _write_output_file(output_file, response):
