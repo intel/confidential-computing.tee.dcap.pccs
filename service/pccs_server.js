@@ -44,6 +44,7 @@ import * as auth from './middleware/auth.js';
 import * as error from './middleware/error.js';
 import addRequestId from './middleware/addRequestId.js';
 import filterDuplicatedParams from './middleware/filterDuplicatedParams.js';
+import v3EolWarning from './middleware/v3EolWarning.js';
 import * as refreshService from './services/refreshService.js';
 import * as appUtil from './utils/apputil.js';
 import { cachingModeManager } from './services/caching_modes/cachingModeManager.js';
@@ -83,6 +84,8 @@ function configureMiddlewareAndRoutes() {
     app.use(morgan(formatLogMessage, { stream: logger.stream }));
     app.use(addRequestId);
     app.use(filterDuplicatedParams);
+
+    app.use('/sgx/certification/v3', v3EolWarning);
 
     // authentication middleware for v3
     auth.validateTokenHashes();

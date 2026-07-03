@@ -316,7 +316,7 @@ async function refreshAllTcbs() {
 
     const tcbs = await fmspcTcbDao.getAllTcbs();
     if (tcbs.findIndex(tcb => tcb.version === 3) > -1) {
-        logger.warn('PCS API version 3 is no longer available. TCB Info collateral version 3 is deprecated and will not be refreshed.');
+        logger.warn('PCS API version 3 is no longer available. TCB Info collateral downloaded from API version 3 is deprecated and will not be refreshed.');
         logger.warn('');
         logger.warn('Consider removal of collateral version 3 with SQL statements such as:');
         logger.warn('DELETE FROM enclave_identities WHERE version = 3;');
