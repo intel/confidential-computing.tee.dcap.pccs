@@ -5,7 +5,7 @@
   "type": "module",
   "dependencies": {
     "@fidm/x509": "^1.2.1",
-    "ajv": "^8.19.0",
+    "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",
     "body-parser": "^2.2.0",
     "caw": "^2.0.1",
@@ -14,7 +14,7 @@
     "cross-env": "^10.1.0",
     "express": "^4.22.1",
     "got": "^11.8.6",
-    "morgan": "^1.10.1",
+    "morgan": "^1.11.0",
     "mysql2": "^3.15.3",
     "node-schedule": "^2.1.1",
     "sequelize": "^6.37.8",
