@@ -261,15 +261,13 @@ export async function getPckCertFromPCS(
         );
     }
 
-    const result = {
-        cert: selectedPckCert.pck_cert
+    return {
+        cert:                                         selectedPckCert.pck_cert,
+        [Constants.SGX_TCBM]:                         selectedPckCert.tcbm,
+        [Constants.SGX_FMSPC]:                        fmspc,
+        [Constants.SGX_PCK_CERTIFICATE_CA_TYPE]:      ca_type,
+        [Constants.SGX_PCK_CERTIFICATE_ISSUER_CHAIN]: pck_certchain
     };
-    result[Constants.SGX_TCBM] = selectedPckCert.tcbm;
-    result[Constants.SGX_FMSPC] = fmspc;
-    result[Constants.SGX_PCK_CERTIFICATE_CA_TYPE] = ca_type;
-    result[Constants.SGX_PCK_CERTIFICATE_ISSUER_CHAIN] = pck_certchain;
-
-    return result;
 }
 
 export async function getPckCrlFromPCS(ca) {
@@ -280,13 +278,6 @@ export async function getPckCrlFromPCS(ca) {
     }
 
     const crl = pck_server_res.rawBody;
-    const result = {
-        pckcrl: crl
-    };
-    result[Constants.SGX_PCK_CRL_ISSUER_CHAIN] = pcsClient.getHeaderValue(
-        pck_server_res.headers,
-        Constants.SGX_PCK_CRL_ISSUER_CHAIN
-    );
 
     await sequelize.transaction(async() => {
         // update or insert PCK CRL
@@ -300,7 +291,13 @@ export async function getPckCrlFromPCS(ca) {
             )
         );
     });
-    return result;
+    return {
+        pckcrl:                               crl,
+        [Constants.SGX_PCK_CRL_ISSUER_CHAIN]: pcsClient.getHeaderValue(
+            pck_server_res.headers,
+            Constants.SGX_PCK_CRL_ISSUER_CHAIN
+        )
+    };
 }
 
 export async function getTcbInfoFromPCS(type, fmspc, version, update_type) {
@@ -342,15 +339,6 @@ export async function getEnclaveIdentityFromPCS(enclave_id, version, update_type
         throw new PccsError(PccsStatus.PCCS_STATUS_NO_CACHE_DATA);
     }
 
-    const result = {
-        identity: pck_server_res.rawBody
-    };
-    result[Constants.SGX_ENCLAVE_IDENTITY_ISSUER_CHAIN] =
-        pcsClient.getHeaderValue(
-            pck_server_res.headers,
-            Constants.SGX_ENCLAVE_IDENTITY_ISSUER_CHAIN
-        );
-
     await sequelize.transaction(async() => {
         // update or insert QE Identity
         await enclaveIdentityDao.upsertEnclaveIdentity(
@@ -368,7 +356,13 @@ export async function getEnclaveIdentityFromPCS(enclave_id, version, update_type
         );
     });
 
-    return result;
+    return {
+        identity:                                      pck_server_res.rawBody,
+        [Constants.SGX_ENCLAVE_IDENTITY_ISSUER_CHAIN]: pcsClient.getHeaderValue(
+            pck_server_res.headers,
+            Constants.SGX_ENCLAVE_IDENTITY_ISSUER_CHAIN
+        )
+    };
 }
 
 export async function getRootCACrlFromPCS(rootcaParam) {
@@ -408,6 +402,11 @@ export async function getRootCACrlFromPCS(rootcaParam) {
             throw new PccsError(PccsStatus.PCCS_STATUS_INTERNAL_ERROR);
         }
 
+        if (!appUtil.isValidCrlUri(x509.cdpUri)) {
+            logger.error('Invalid CDP URI.');
+            throw new PccsError(PccsStatus.PCCS_STATUS_INTERNAL_ERROR);
+        }
+
         rootca.crl = await pcsClient.getFileFromUrl(x509.cdpUri);
 
         await pcsCertificatesDao.upsertPcsCertificates({
@@ -421,6 +420,10 @@ export async function getRootCACrlFromPCS(rootcaParam) {
 }
 
 export async function getCrlFromPCS(uri) {
+    if (!appUtil.isValidCrlUri(uri)) {
+        logger.error('Invalid CRL URI.');
+        throw new PccsError(PccsStatus.PCCS_STATUS_INTERNAL_ERROR);
+    }
     const crl = await pcsClient.getFileFromUrl(uri);
 
     await crlCacheDao.upsertCrl(uri, crl);

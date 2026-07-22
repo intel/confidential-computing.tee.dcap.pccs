@@ -32,16 +32,40 @@ import Config from 'config';
 import Crypto from 'crypto';
 import PccsStatus from '../constants/pccs_status_code.js';
 import PccsError from '../utils/PccsError.js';
+import logger from '../utils/Logger.js';
+
+const SHA512_HEX_REGEX = /^[0-9a-fA-F]{128}$/;
+
+function validateTokenHashInConfig(configKey) {
+    if (!Config.has(configKey) || !SHA512_HEX_REGEX.test(Config.get(configKey))) {
+        logger.warn(`Invalid ${configKey} in configuration. Expected 128 hex characters for SHA-512 hash.`);
+        return false;
+    }
+    return true;
+}
+
+export function validateTokenHashes() {
+    const isUserTokenValid = validateTokenHashInConfig('UserTokenHash');
+    const isAdminTokenValid = validateTokenHashInConfig('AdminTokenHash');
+    if (!isUserTokenValid || !isAdminTokenValid) {
+        logger.warn('Service not properly configured. Please run install script again.');
+    }
+}
 
 export function validateUser(req, res, next) {
+    const CONFIG_TOKEN_KEY = 'UserTokenHash';
+    if (!Config.has(CONFIG_TOKEN_KEY)) {
+        throw new PccsError(PccsStatus.PCCS_STATUS_UNAUTHORIZED);
+    }
     const HTTP_HEADER_USER_TOKEN = 'user-token';
     const token = req.headers[HTTP_HEADER_USER_TOKEN];
     if (token) {
         const hash = Crypto.createHash('sha512');
         hash.update(token);
-        const userTokenHash = hash.digest('hex');
+        const userTokenBuffer = hash.digest();
+        const expectedTokenBuffer = Buffer.from(Config.get(CONFIG_TOKEN_KEY), 'hex');
 
-        if (userTokenHash !== Config.get('UserTokenHash')) {
+        if (userTokenBuffer.length !== expectedTokenBuffer.length || !Crypto.timingSafeEqual(userTokenBuffer, expectedTokenBuffer)) {
             throw new PccsError(PccsStatus.PCCS_STATUS_UNAUTHORIZED);
         } else {
             next();
@@ -52,14 +76,19 @@ export function validateUser(req, res, next) {
 }
 
 export function validateAdmin(req, res, next) {
+    const CONFIG_TOKEN_KEY = 'AdminTokenHash';
+    if (!Config.has(CONFIG_TOKEN_KEY)) {
+        throw new PccsError(PccsStatus.PCCS_STATUS_UNAUTHORIZED);
+    }
     const HTTP_HEADER_ADMIN_TOKEN = 'admin-token';
     const token = req.headers[HTTP_HEADER_ADMIN_TOKEN];
     if (token) {
         const hash = Crypto.createHash('sha512');
         hash.update(token);
-        const admin_token_hash = hash.digest('hex');
+        const adminTokenBuffer = hash.digest();
+        const expectedTokenBuffer = Buffer.from(Config.get(CONFIG_TOKEN_KEY), 'hex');
 
-        if (admin_token_hash !== Config.get('AdminTokenHash')) {
+        if (adminTokenBuffer.length !== expectedTokenBuffer.length || !Crypto.timingSafeEqual(adminTokenBuffer, expectedTokenBuffer)) {
             throw new PccsError(PccsStatus.PCCS_STATUS_UNAUTHORIZED);
         } else {
             next();

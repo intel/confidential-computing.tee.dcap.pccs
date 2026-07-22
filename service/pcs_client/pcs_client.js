@@ -104,6 +104,10 @@ export function parseAndModifyUrl(url) {
 
 async function doRequest(url, options) {
     try {
+        if (url.indexOf('/v3/') >= 0) {
+            throw new PccsError(PccsStatus.PCCS_STATUS_PCS_V3_REACHED_EOL);
+        }
+
         // check for early access portal
         if (isEarlyAccessPortal(url)) {
             if (!options.headers) {
@@ -138,7 +142,11 @@ async function doRequest(url, options) {
 
         return response;
     } catch (err) {
+        if (err.status === PccsStatus.PCCS_STATUS_PCS_V3_REACHED_EOL[0]) {
+            throw err;
+        }
         logger.error(err);
+
         if (err.response && err.response.headers) {
             logger.info(`Request-ID is : ${err.response.headers['request-id']}`);
         }
@@ -209,6 +217,9 @@ export async function getPckCrl(ca) {
 }
 
 export async function getTcb(type, fmspc, version, updateType) {
+    if (version === 3) {
+        throw new PccsError(PccsStatus.PCCS_STATUS_PCS_V3_REACHED_EOL);
+    }
     if (type !== Constants.PROD_TYPE_SGX && type !== Constants.PROD_TYPE_TDX) {
         throw new PccsError(PccsStatus.PCCS_STATUS_INTERNAL_ERROR);
     }
@@ -231,15 +242,13 @@ export async function getTcb(type, fmspc, version, updateType) {
         uri = getTdxUrl(uri);
     }
 
-    if (global.PCS_VERSION === 4 && version === 3) {
-        // A little tricky here because we need to use the v3 PCS URL though v4 is configured
-        uri = uri.replace('/v4/', '/v3/');
-    }
-
     return doRequest(uri, options);
 }
 
 export async function getEnclaveIdentity(enclaveId, version, updateType) {
+    if (version === 3) {
+        throw new PccsError(PccsStatus.PCCS_STATUS_PCS_V3_REACHED_EOL);
+    }
     if (
         enclaveId !== Constants.QE_IDENTITY_ID &&
         enclaveId !== Constants.QVE_IDENTITY_ID &&
@@ -264,11 +273,6 @@ export async function getEnclaveIdentity(enclaveId, version, updateType) {
         uri = `${Config.get('uri')}qve/identity`;
     } else if (enclaveId === Constants.TDQE_IDENTITY_ID) {
         uri = getTdxUrl(uri);
-    }
-
-    if (global.PCS_VERSION === 4 && version === 3) {
-        // A little tricky here because we need to use the v3 PCS URL though v4 is configured
-        uri = uri.replace('/v4/', '/v3/');
     }
 
     return doRequest(uri, options);

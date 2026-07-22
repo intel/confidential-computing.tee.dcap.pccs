@@ -63,6 +63,10 @@ export async function putAppraisalPolicy(regPolicyJson) {
     regPolicyJson.id = id;
 
     // get policy type
+    if (!regPolicyJson.policy.includes('.')) {
+        logger.error('Failed to validate the policy field.');
+        throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
+    }
     const payload = JSON.parse(Buffer.from(regPolicyJson.policy.split('.')[1], 'base64url'));
     regPolicyJson.type = getPolicyTypeByClassId(payload);
 

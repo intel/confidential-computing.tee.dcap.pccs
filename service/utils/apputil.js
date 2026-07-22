@@ -71,6 +71,13 @@ export function startupCheck() {
     return true;
 }
 
+const ROOT_CRL_URI_REGEX = /^https:\/\/([a-zA-Z0-9-]*certificates\.trustedservices\.intel\.com|certprx\.adsdcsp\.com)\/IntelSGXRootCA\..*$/;
+const INTERMEDIATE_CRL_URI_REGEX = /^https:\/\/([a-zA-Z0-9-]*\.?api\.trustedservices\.intel\.com|[a-zA-Z0-9-]+\.az\.sgx(prod|np)\.adsdcsp\.com)\/sgx\/certification\/v([1-9][0-9]*)\/pckcrl\?.*$/;
+
+export function isValidCrlUri(uri) {
+    return ROOT_CRL_URI_REGEX.test(uri) || INTERMEDIATE_CRL_URI_REGEX.test(uri);
+}
+
 async function testDbStatus() {
     const sql = 'select * from pck_crl';
     try {

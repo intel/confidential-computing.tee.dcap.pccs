@@ -43,6 +43,7 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/service/middleware/error.js	<installdir>/middleware/error.js	0	main	STP
 <deliverydir>/service/middleware/addRequestId.js	<installdir>/middleware/addRequestId.js	0	main	STP
 <deliverydir>/service/middleware/filterDuplicatedParams.js	<installdir>/middleware/filterDuplicatedParams.js	0	main	STP
+<deliverydir>/service/middleware/v3EolWarning.js	<installdir>/middleware/v3EolWarning.js	0	main	STP
 <deliverydir>/service/migrations/00_db_initialize.up.sql	<installdir>/migrations/00_db_initialize.up.sql	0	main	STP
 <deliverydir>/service/migrations/01_db_version_1.js	<installdir>/migrations/01_db_version_1.js	0	main	STP
 <deliverydir>/service/migrations/02_db_version_2.js	<installdir>/migrations/02_db_version_2.js	0	main	STP
@@ -67,6 +68,7 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/service/services/tcbinfoService.js	<installdir>/services/tcbinfoService.js	0	main	STP
 <deliverydir>/service/services/crlService.js	<installdir>/services/crlService.js	0	main	STP
 <deliverydir>/service/services/appraisalPolicyService.js	<installdir>/services/appraisalPolicyService.js	0	main	STP
+<deliverydir>/service/services/validatorService.js	<installdir>/services/validatorService.js	0	main	STP
 <deliverydir>/service/services/caching_modes/cachingMode.js	<installdir>/services/caching_modes/cachingMode.js	0	main	STP
 <deliverydir>/service/services/caching_modes/cachingModeManager.js	<installdir>/services/caching_modes/cachingModeManager.js	0	main	STP
 <deliverydir>/service/services/logic/commonCacheLogic.js	<installdir>/services/logic/commonCacheLogic.js	0	main	STP

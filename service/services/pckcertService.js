@@ -80,14 +80,6 @@ export async function pckCertSelection(
         throw new PccsError(PccsStatus.PCCS_STATUS_NO_CACHE_DATA);
     }
 
-    const result = {
-        cert: selectedPckCert.pck_cert
-    };
-    result[Constants.SGX_TCBM] = selectedPckCert.tcbm;
-    result[Constants.SGX_FMSPC] = fmspc;
-    result[Constants.SGX_PCK_CERTIFICATE_CA_TYPE] = ca;
-    result[Constants.SGX_PCK_CERTIFICATE_ISSUER_CHAIN] = certchain.intmd_cert + certchain.root_cert;
-
     // create an entry for the new TCB level in platform_tcbs table
     await platformTcbsDao.upsertPlatformTcbs(
         qeid,
@@ -97,7 +89,13 @@ export async function pckCertSelection(
         selectedPckCert.tcbm
     );
 
-    return result;
+    return {
+        cert:                                         selectedPckCert.pck_cert,
+        [Constants.SGX_TCBM]:                         selectedPckCert.tcbm,
+        [Constants.SGX_FMSPC]:                        fmspc,
+        [Constants.SGX_PCK_CERTIFICATE_CA_TYPE]:      ca,
+        [Constants.SGX_PCK_CERTIFICATE_ISSUER_CHAIN]: certchain.intmd_cert + certchain.root_cert
+    };
 }
 
 export async function getPckCert(qeid, cpusvn, pcesvn, pceid, enc_ppid) {
@@ -118,7 +116,7 @@ export async function getPckCert(qeid, cpusvn, pcesvn, pceid, enc_ppid) {
                 pcesvn,
                 pceid,
                 enc_ppid,
-                platform ? platform.platform_manifest : ''
+                ''
             );
         } else {
             // Always treat presence of platform record as platform collateral is cached

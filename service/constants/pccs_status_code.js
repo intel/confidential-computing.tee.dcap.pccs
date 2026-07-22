@@ -43,6 +43,7 @@ define('PCCS_STATUS_SUCCESS', [200, 'Operation successful.']);
 define('PCCS_STATUS_INVALID_REQ', [400, 'Invalid request parameters.']);
 define('PCCS_STATUS_UNAUTHORIZED', [401, 'Authentication failed.']);
 define('PCCS_STATUS_NO_CACHE_DATA', [404, 'No cache data for this platform.']);
+define('PCCS_STATUS_CONTENT_TOO_LARGE', [413, 'Content too large.']);
 define('PCCS_STATUS_INTEGRITY_ERROR', [
     460,
     `The integrity of the data can't be verified.`,
@@ -54,6 +55,10 @@ define('PCCS_STATUS_PLATFORM_UNKNOWN', [
 define('PCCS_STATUS_CERTS_UNAVAILABLE', [
     462,
     'Certificates are not available for certain TCBs.',
+]);
+define('PCCS_STATUS_PCS_V3_REACHED_EOL', [
+    410,
+    'The Intel PCS API version 3 reached planned EOL. Accordingly, collateral from this API version cannot be retrieved any longer.',
 ]);
 define('PCCS_STATUS_INTERNAL_ERROR', [500, 'Internal server error occurred.']);
 define('PCCS_STATUS_SERVICE_UNAVAILABLE', [

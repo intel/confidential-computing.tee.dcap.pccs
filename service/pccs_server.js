@@ -44,6 +44,7 @@ import * as auth from './middleware/auth.js';
 import * as error from './middleware/error.js';
 import addRequestId from './middleware/addRequestId.js';
 import filterDuplicatedParams from './middleware/filterDuplicatedParams.js';
+import v3EolWarning from './middleware/v3EolWarning.js';
 import * as refreshService from './services/refreshService.js';
 import * as appUtil from './utils/apputil.js';
 import { cachingModeManager } from './services/caching_modes/cachingModeManager.js';
@@ -55,6 +56,7 @@ import {
 
 
 const app = express();
+app.disable('x-powered-by');
 
 async function initializeApp() {
     global.PCS_VERSION = appUtil.getApiVersionFromUrl(Config.get('uri'));
@@ -82,10 +84,12 @@ function configureMiddlewareAndRoutes() {
     app.use(morgan(formatLogMessage, { stream: logger.stream }));
     app.use(addRequestId);
     app.use(filterDuplicatedParams);
-    app.use(body_parser.urlencoded({ extended: true }));
-    app.use(body_parser.json({ limit: '200000kb' }));
+
+    app.use('/sgx/certification/v3', v3EolWarning);
 
     // authentication middleware for v3
+    auth.validateTokenHashes();
+
     app.get('/sgx/certification/v3/platforms', auth.validateAdmin);
     app.post('/sgx/certification/v3/platforms', auth.validateUser);
     app.use('/sgx/certification/v3/platformcollateral', auth.validateAdmin);
@@ -100,6 +104,11 @@ function configureMiddlewareAndRoutes() {
         app.use('/sgx/certification/v4/refresh', auth.validateAdmin);
         app.put('/sgx/certification/v4/appraisalpolicy', auth.validateAdmin);
     }
+
+    // body size limits
+    const maxRequestBodySize = Config.has('MaxRequestBodySize') ? Config.get('MaxRequestBodySize') : '2MB';
+    app.use(body_parser.urlencoded({ extended: true, limit: maxRequestBodySize }));
+    app.use(body_parser.json({ limit: maxRequestBodySize }));
 
     // router
     app.use('/sgx/certification/v3', sgxRouter);
@@ -156,6 +165,9 @@ function startHttpsServer() {
 
     try {
         const httpsServer = https.createServer(options, app);
+        httpsServer.requestTimeout = (Config.has('RequestTimeoutSeconds') ? Config.get('RequestTimeoutSeconds') : 15) * 1000;
+        httpsServer.headersTimeout = (Config.has('HeadersTimeoutSeconds') ? Config.get('HeadersTimeoutSeconds') : 10) * 1000;
+        httpsServer.keepAliveTimeout = (Config.has('KeepAliveTimeoutSeconds') ? Config.get('KeepAliveTimeoutSeconds') : 60) * 1000;
         httpsServer.listen(Config.get('HTTPS_PORT'), Config.get('hosts'), () => {
             logger.info(`HTTPS Server is running on: https://localhost:${Config.get('HTTPS_PORT')}`);
             app.emit('app_started');
