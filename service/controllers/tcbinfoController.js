@@ -29,34 +29,18 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-import { tcbinfoService } from '../services/index.js';
-import PccsError from '../utils/PccsError.js';
+import { tcbinfoService, validatorService } from '../services/index.js';
 import PccsStatus from '../constants/pccs_status_code.js';
 import Constants from '../constants/index.js';
 import * as appUtil from '../utils/apputil.js';
-import logger from '../utils/Logger.js';
 
 async function getTcbInfo(req, res, next, type) {
-    const FMSPC_SIZE = 12;
 
     try {
         // validate request parameters
         const version = appUtil.getApiVersionFromUrl(req.originalUrl);
-        let fmspc = req.query.fmspc;
-        if (fmspc?.length !== FMSPC_SIZE) {
-            logger.error(`fmspc is not valid : ${fmspc}`);
-            throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
-        }
-
-        // normalize request parameters
-        fmspc = fmspc.toUpperCase();
-
-        const update_type = req.query.update ? req.query.update.toUpperCase() : Constants.UPDATE_TYPE_STANDARD;
-
-        if (update_type !== Constants.UPDATE_TYPE_STANDARD && update_type !== Constants.UPDATE_TYPE_EARLY) {
-            logger.error(`Invalid update type : ${update_type}`);
-            throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
-        }
+        const fmspc = validatorService.validateAndNormalizeFmspc(req.query.fmspc);
+        const update_type = validatorService.validateAndNormalizeUpdateType(req.query.update);
 
         // call service
         const tcbinfoJson = await tcbinfoService.getTcbInfo(type, fmspc, version, update_type);

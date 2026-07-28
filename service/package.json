@@ -5,7 +5,7 @@
   "type": "module",
   "dependencies": {
     "@fidm/x509": "^1.2.1",
-    "ajv": "^8.19.0",
+    "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",
     "body-parser": "^2.3.0",
     "caw": "^2.0.1",
@@ -29,7 +29,8 @@
     "eslint": "^10.3.0",
     "@eslint/js": "^10.0.1",
     "eslint-plugin-chai-friendly": "^1.2.0",
-    "eslint-plugin-n": "^18.0.0"
+    "eslint-plugin-n": "^18.0.0",
+    "esmock": "^2.7.5"
   },
   "engines": {
     "node": ">= 22.13.0"

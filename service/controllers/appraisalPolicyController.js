@@ -29,7 +29,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-import { appraisalPolicyService } from '../services/index.js';
+import { appraisalPolicyService, validatorService } from '../services/index.js';
 import PccsError from '../utils/PccsError.js';
 import PccsStatus from '../constants/pccs_status_code.js';
 import logger from '../utils/Logger.js';
@@ -50,14 +50,7 @@ export async function putAppraisalPolicy(req, res, next) {
 
 export async function getAppraisalPolicy(req, res, next) {
     try {
-        const FMSPC_SIZE = 12;
-        let fmspc = req.query.fmspc;
-        if (!fmspc || fmspc.length !== FMSPC_SIZE) {
-            logger.error(`fmspc is not valid : ${fmspc}`);
-            throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
-        }
-
-        fmspc = fmspc.toUpperCase();
+        const fmspc = validatorService.validateAndNormalizeFmspc(req.query.fmspc);
 
         const policies = await appraisalPolicyService.getDefaultAppraisalPolicies(fmspc);
         if (policies.length === 0) {

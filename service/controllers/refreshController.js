@@ -29,20 +29,24 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-import { refreshService } from '../services/index.js';
+import { refreshService, validatorService } from '../services/index.js';
 import PccsStatus from '../constants/pccs_status_code.js';
 import PccsError from '../utils/PccsError.js';
 import logger from '../utils/Logger.js';
 
 export async function refreshCache(req, res, next) {
     try {
+        let fmspc = req.query.fmspc;
         const type = req.query.type;
-        const fmspc = req.query.fmspc;
 
         if (type && type !== 'certs') {
             logger.error(`Invalid refresh type : ${type}`);
             throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
         }
+        if (type) {
+            fmspc = validatorService.validateAndNormalizeFmspc(fmspc);
+        }
+
         // call service
         await refreshService.refreshCache(type, fmspc);
 
