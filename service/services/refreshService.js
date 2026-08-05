@@ -300,7 +300,7 @@ async function refreshOneTcb(fmspc, type, version, updateType) {
         await pcsCertificatesDao.upsertTcbInfoIssuerChain(
             pcsClient.getHeaderValue(
                 pckServerRes.headers,
-                appUtil.getTcbInfoIssuerChainName(version)
+                appUtil.getTcbInfoIssuerChainName(global.PCS_VERSION)
             )
         );
     } else {
