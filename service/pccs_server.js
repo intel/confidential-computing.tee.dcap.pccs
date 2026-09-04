@@ -40,7 +40,7 @@ import body_parser from 'body-parser';
 import { sgxRouter, tdxRouter } from './routes/index.js';
 import * as fs from 'fs';
 import * as https from 'https';
-import * as auth from './middleware/auth.js';
+import { validateTokenHashes } from './middleware/auth.js';
 import * as error from './middleware/error.js';
 import addRequestId from './middleware/addRequestId.js';
 import filterDuplicatedParams from './middleware/filterDuplicatedParams.js';
@@ -87,29 +87,14 @@ function configureMiddlewareAndRoutes() {
 
     app.use('/sgx/certification/v3', v3EolWarning);
 
-    // authentication middleware for v3
-    auth.validateTokenHashes();
-
-    app.get('/sgx/certification/v3/platforms', auth.validateAdmin);
-    app.post('/sgx/certification/v3/platforms', auth.validateUser);
-    app.use('/sgx/certification/v3/platformcollateral', auth.validateAdmin);
-    app.use('/sgx/certification/v3/refresh', auth.validateAdmin);
-    app.put('/sgx/certification/v3/appraisalpolicy', auth.validateAdmin);
-
-    if (global.PCS_VERSION === 4) {
-        // authentication middleware for v4
-        app.get('/sgx/certification/v4/platforms', auth.validateAdmin);
-        app.post('/sgx/certification/v4/platforms', auth.validateUser);
-        app.use('/sgx/certification/v4/platformcollateral', auth.validateAdmin);
-        app.use('/sgx/certification/v4/refresh', auth.validateAdmin);
-        app.put('/sgx/certification/v4/appraisalpolicy', auth.validateAdmin);
-    }
+    validateTokenHashes();
 
     // body size limits
     const maxRequestBodySize = Config.has('MaxRequestBodySize') ? Config.get('MaxRequestBodySize') : '2MB';
     app.use(body_parser.urlencoded({ extended: true, limit: maxRequestBodySize }));
     app.use(body_parser.json({ limit: maxRequestBodySize }));
 
+    // note: don't configure middleware for whole routes (e.g. /sgx/certification/v4/platforms) as express allows using // in the URL, which will bypass the middleware. Instead, configure middleware in router.
     // router
     app.use('/sgx/certification/v3', sgxRouter);
     if (global.PCS_VERSION === 4) {
