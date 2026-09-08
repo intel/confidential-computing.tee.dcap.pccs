@@ -37,7 +37,7 @@ import express from 'express';
 import logger, { formatLogMessage } from './utils/Logger.js';
 import node_schedule from 'node-schedule';
 import body_parser from 'body-parser';
-import { sgxRouter, tdxRouter } from './routes/index.js';
+import { sgxRouter, tdxRouter, healthRouter } from './routes/index.js';
 import * as fs from 'fs';
 import * as https from 'https';
 import * as auth from './middleware/auth.js';
@@ -46,6 +46,7 @@ import addRequestId from './middleware/addRequestId.js';
 import filterDuplicatedParams from './middleware/filterDuplicatedParams.js';
 import v3EolWarning from './middleware/v3EolWarning.js';
 import * as refreshService from './services/refreshService.js';
+import * as healthService from './services/healthService.js';
 import * as appUtil from './utils/apputil.js';
 import { cachingModeManager } from './services/caching_modes/cachingModeManager.js';
 import {
@@ -116,6 +117,9 @@ function configureMiddlewareAndRoutes() {
         app.use('/sgx/certification/v4', sgxRouter);
         app.use('/tdx/certification/v4', tdxRouter);
     }
+
+    // health probe endpoints
+    app.use('/healthz', healthRouter);
 
     // error handling middleware
     app.use(error.errorHandling);
@@ -198,6 +202,9 @@ async function main() {
     setCachingMode();
     startHttpsServer();
     scheduleRefreshJob();
+
+    // the boot sequence completed; /healthz/startup may report STARTED
+    healthService.markStartupComplete();
 }
 
 main();
