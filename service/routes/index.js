@@ -43,6 +43,7 @@ import {
     appraisalPolicyController,
     healthController,
 } from '../controllers/index.js';
+import * as auth from '../middleware/auth.js';
 
 // express routes for our API
 const sgxRouter = expressRouter();
@@ -52,12 +53,12 @@ const healthRouter = expressRouter();
 //---------------- Routes for SGX APIs-------------------------------
 sgxRouter
     .route('/platforms')
-    .post(platformsController.postPlatforms)
-    .get(platformsController.getPlatforms);
+    .post(auth.validateUser, platformsController.postPlatforms)
+    .get(auth.validateAdmin, platformsController.getPlatforms);
 
 sgxRouter
     .route('/platformcollateral')
-    .put(platformCollateralController.putPlatformCollateral);
+    .put(auth.validateAdmin, platformCollateralController.putPlatformCollateral);
 
 sgxRouter.route('/pckcert').get(pckcertController.getPckCert);
 
@@ -75,12 +76,12 @@ sgxRouter.route('/crl').get(crlController.getCrl);
 
 sgxRouter
     .route('/refresh')
-    .post(refreshController.refreshCache)
-    .get(refreshController.refreshCache);
+    .post(auth.validateAdmin, refreshController.refreshCache)
+    .get(auth.validateAdmin, refreshController.refreshCache);
 
 sgxRouter
     .route('/appraisalpolicy')
-    .put(appraisalPolicyController.putAppraisalPolicy)
+    .put(auth.validateAdmin, appraisalPolicyController.putAppraisalPolicy)
     .get(appraisalPolicyController.getAppraisalPolicy);
 
 //---------------- Routes for TDX APIs-------------------------------
