@@ -131,7 +131,10 @@ def copy_folder_recursively(src_dir, dest_dir):
 ################################################################################
 def read_BOM(local_path):
 	#get the BOM file path that need to open
-	file_list = local_path + "/" + bom_file
+	file_list = os.path.realpath(os.path.join(local_path, bom_file))
+	if not file_list.startswith(os.path.realpath(local_path) + os.sep):
+		print("Error: BOM file path is outside the allowed directory")
+		exit(1)
 	f = open(file_list, 'r')
 	#read the content in BOM file
 	lines = f.readlines()
