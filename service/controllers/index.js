@@ -39,6 +39,7 @@ import * as rootcacrlController from './rootcacrlController.js';
 import * as refreshController from './refreshController.js';
 import * as crlController from './crlController.js';
 import * as appraisalPolicyController from './appraisalPolicyController.js';
+import * as healthController from './healthController.js';
 
 export {
     platformsController,
@@ -51,4 +52,5 @@ export {
     refreshController,
     crlController,
     appraisalPolicyController,
+    healthController,
 };

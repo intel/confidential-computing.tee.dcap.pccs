@@ -40,6 +40,7 @@ import * as platformsService from './platformsService.js';
 import * as crlService from './crlService.js';
 import * as appraisalPolicyService from './appraisalPolicyService.js';
 import * as validatorService from './validatorService.js';
+import * as healthService from './healthService.js';
 
 export {
     platformsRegService,
@@ -54,4 +55,5 @@ export {
     crlService,
     appraisalPolicyService,
     validatorService,
+    healthService,
 };

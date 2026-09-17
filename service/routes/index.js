@@ -41,12 +41,14 @@ import {
     refreshController,
     crlController,
     appraisalPolicyController,
+    healthController,
 } from '../controllers/index.js';
 import * as auth from '../middleware/auth.js';
 
 // express routes for our API
 const sgxRouter = expressRouter();
 const tdxRouter = expressRouter();
+const healthRouter = expressRouter();
 
 //---------------- Routes for SGX APIs-------------------------------
 sgxRouter
@@ -87,5 +89,11 @@ tdxRouter.route('/tcb').get(tcbinfoController.getTdxTcbInfo);
 
 tdxRouter.route('/qe/identity').get(identityController.getTdQeIdentity);
 
+//---------------- Routes for health probes--------------------------
+healthRouter.route('/live').get(healthController.getLiveness);
 
-export { sgxRouter, tdxRouter };
+healthRouter.route('/ready').get(healthController.getReadiness);
+
+healthRouter.route('/startup').get(healthController.getStartup);
+
+export { sgxRouter, tdxRouter, healthRouter };
