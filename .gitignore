@@ -1,6 +1,8 @@
 __pycache__/
 build_infrastructure/installer/linux/common/intel-tee-pccs-admin-tool/gen_source.py
 build_infrastructure/installer/linux/common/sgx-dcap-pccs/gen_source.py
+build_infrastructure/installer/linux/common/intel-tee-pccs-admin-tool/BOMs/BOM_license.txt
+build_infrastructure/installer/linux/common/sgx-dcap-pccs/BOMs/BOM_license.txt
 output/
 
 build_infrastructure/installer/linux/deb/*/*.deb
