@@ -13,6 +13,7 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/service/controllers/rootcacrlController.js	<installdir>/controllers/rootcacrlController.js	0	main	STP
 <deliverydir>/service/controllers/tcbinfoController.js	<installdir>/controllers/tcbinfoController.js	0	main	STP
 <deliverydir>/service/controllers/crlController.js	<installdir>/controllers/crlController.js	0	main	STP
+<deliverydir>/service/controllers/healthController.js	<installdir>/controllers/healthController.js	0	main	STP
 <deliverydir>/service/controllers/appraisalPolicyController.js	<installdir>/controllers/appraisalPolicyController.js	0	main	STP
 <deliverydir>/service/dao/models/fmspc_tcbs.js	<installdir>/dao/models/fmspc_tcbs.js	0	main	STP
 <deliverydir>/service/dao/models/index.js	<installdir>/dao/models/index.js	0	main	STP
@@ -67,6 +68,7 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/service/services/rootcacrlService.js	<installdir>/services/rootcacrlService.js	0	main	STP
 <deliverydir>/service/services/tcbinfoService.js	<installdir>/services/tcbinfoService.js	0	main	STP
 <deliverydir>/service/services/crlService.js	<installdir>/services/crlService.js	0	main	STP
+<deliverydir>/service/services/healthService.js	<installdir>/services/healthService.js	0	main	STP
 <deliverydir>/service/services/appraisalPolicyService.js	<installdir>/services/appraisalPolicyService.js	0	main	STP
 <deliverydir>/service/services/validatorService.js	<installdir>/services/validatorService.js	0	main	STP
 <deliverydir>/service/services/caching_modes/cachingMode.js	<installdir>/services/caching_modes/cachingMode.js	0	main	STP
