@@ -12,10 +12,10 @@
     "cls-hooked": "^4.2.2",
     "config": "^4.4.1",
     "cross-env": "^10.1.0",
-    "express": "^4.22.1",
+    "express": "^4.22.3",
     "got": "^11.8.6",
-    "morgan": "^1.11.0",
-    "mysql2": "^3.15.3",
+    "morgan": "^1.12.1",
+    "mysql2": "^3.24.5",
     "node-schedule": "^2.1.1",
     "sequelize": "^6.37.8",
     "sqlite3": "^5.1.7",
@@ -23,15 +23,15 @@
     "winston": "^3.19.0"
   },
   "devDependencies": {
-    "chai": "^6.2.2",
+    "chai": "^6.3.0",
     "mocha": "^11.7.5",
     "sinon": "^21.1.2",
-    "eslint": "^10.3.0",
+    "eslint": "^10.12.0",
     "@eslint/js": "^10.0.1",
     "eslint-plugin-chai-friendly": "^1.2.0",
-    "eslint-plugin-n": "^18.0.0",
+    "eslint-plugin-n": "^18.4.1",
     "esmock": "^2.7.5",
-    "supertest": "^7.2.2"
+    "supertest": "^7.3.1"
   },
   "engines": {
     "node": ">= 22.13.0"
