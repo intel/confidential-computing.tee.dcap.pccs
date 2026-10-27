@@ -12,7 +12,7 @@ Architecture: all
 #  Note: NodeJS version constraint is deliberately lax, to allow for forward-compat
 #        As of time of this writing, we declare official support
 #        for Active LTS (v24) or Maintenance LTS (v22) versions
-Depends: nodejs (>= 22.13.0), npm, cracklib-runtime, adduser
+Depends: nodejs (>= 22.15.0), npm, cracklib-runtime, adduser
 #
 # ___
 # vvv - If openssl is present, it allows to auto-generate self-signed TLS certificates for HTTPS support

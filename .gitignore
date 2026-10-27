@@ -24,3 +24,5 @@ build_infrastructure/installer/linux/rpm/intel-tee-pccs-admin-tool/intel-tee-pcc
 .vscode
 build*
 node_modules
+*.log
+pckcache.db*

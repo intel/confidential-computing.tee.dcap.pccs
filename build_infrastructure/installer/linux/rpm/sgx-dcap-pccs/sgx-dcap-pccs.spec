@@ -41,12 +41,12 @@ Group:          Applications/Internet
 #       As of time of this writing, we declare official support
 #       for Active LTS (v24) or Maintenance LTS (v22) versions
 #
-# Note2: RedHat-based systems have the virtual nodejs package with epoch 1, so a naive 'nodejs >= 22.13.0' does not work due to '1:16.20.2' > '0:22.13.0'
+# Note2: RedHat-based systems have the virtual nodejs package with epoch 1, so a naive 'nodejs >= 22.15.0' does not work due to '1:16.20.2' > '0:22.15.0'
 #        Also, while 'nodejsXX' packages are more commonly in use, the NodeSource project provides backports at epoch 0 or 2, so the below may not be 100% robust if
 #        there's a package like 2:1.1.0, but should be versatile enough to catch most issues and not create a false-negative scenario w/ a proper version not allowed.
-#        For example, every nsolid package will saturate the nodejs >= 1:22.13.0 predicate which is why we exclude it there (but it still provides nodejs(engine) so would be allowed)
+#        For example, every nsolid package will saturate the nodejs >= 1:22.15.0 predicate which is why we exclude it there (but it still provides nodejs(engine) so would be allowed)
 #
-Requires:       ((nodejs(engine) >= 22.13.0) or (nodejs >= 1:22.13.0 unless nsolid) or ((nodejs >= 0:22.13.0 and nodejs < 1:) unless nsolid) or nodejs24 or nodejs22)
+Requires:       ((nodejs(engine) >= 22.15.0) or (nodejs >= 1:22.15.0 unless nsolid) or ((nodejs >= 0:22.15.0 and nodejs < 1:) unless nsolid) or nodejs24 or (nodejs22 >= 22.15.0))
 
 Requires:       (npm or nodejs24-npm or npm24 or nodejs22-npm or npm22)
 
